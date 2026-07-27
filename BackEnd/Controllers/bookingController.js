@@ -3,6 +3,14 @@ const jwt = require('jsonwebtoken');
 // adminLogin function to handle admin login requests
 async function adminLogin(req, res) {
     try {
+        
+        // if theres no data privide from user
+        if (!req.body) {
+            return res.status(400).json({ 
+                error:"please provide request data"
+            });
+        }      
+
         // check if the request body contains username and password
         const { username, password } = req.body;
 
@@ -30,8 +38,9 @@ async function adminLogin(req, res) {
             process.env.JWT_SECRET,
             { expiresIn: '12h' }
         );
-        console.log('Admin login successful, token generated:', token);
-        return res.json({ success: true, token });
+        console.log('Admin login successful, token generated:', token); // token is wrong but add for test cases (trail version)
+        console.log('Admin username:', username);
+        return res.json({ success: true, token , message: 'Admin login successful' , username: username });
 
     } catch (error) {
         console.error('Error in adminLogin:', error);
