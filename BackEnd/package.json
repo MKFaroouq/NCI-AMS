@@ -1,0 +1,31 @@
+{
+  "name": "nci-q",
+  "version": "1.0.0",
+  "description": "Smart Queue & Hybrid Appointment Management System for the National Cancer Institute, Menofia Branch pilot.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MKFaroouq/NCI-Q"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MKFaroouq/NCI-Q"
+  },
+  "homepage": "https://github.com/MKFaroouq/NCI-Q#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "exceljs": "^4.4.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "socket.io": "^4.8.3"
+  }
+}
