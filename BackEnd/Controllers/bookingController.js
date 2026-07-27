@@ -1,3 +1,5 @@
+const jwt = require('jsonwebtoken');
+
 // adminLogin function to handle admin login requests
 async function adminLogin(req, res) {
     try {
@@ -38,3 +40,7 @@ async function adminLogin(req, res) {
         });
     }
 }
+
+module.exports = {
+    adminLogin
+};
