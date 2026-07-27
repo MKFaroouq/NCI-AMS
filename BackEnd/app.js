@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const express = require('express');
 const mongoose = require('mongoose');
-
+const routes = require('./routes/bookingRoutes');
 
 const app = express();
 
@@ -10,7 +10,8 @@ const app = express();
 // Middleware to parse JSON bodies
 app.use(express.json());
 
-
+// routes
+app.use('/api', routes);
 
 // Connect to MongoDB
 async function DBconnection(){
@@ -27,7 +28,7 @@ DBconnection();
 
 
 // Port
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 
 app.listen(PORT,() =>{
 
