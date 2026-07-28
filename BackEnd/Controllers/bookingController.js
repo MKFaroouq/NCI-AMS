@@ -73,11 +73,11 @@ async function createBooking(req, res) {
 
         // check if nothing enterd by user
         if (!patientName || !nationalId || !phoneNumber || !governorate || !clinicId) {
-            return res.status(400).json({ error: 'جميع الحقول مطلوبة' });
+            return res.status(400).json({ error: "all fields are required" });
         }
 
         if (!nationalIdImage) {
-            return res.status(400).json({ error: 'يرجى رفع صورة الرقم القومي' });
+            return res.status(400).json({ error: 'please upload a photo of your national ID' });
         }
 
         // make sure the clinic exists and is active
