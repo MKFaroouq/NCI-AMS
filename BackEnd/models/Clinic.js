@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const clinicSchema = new mongoose.Schema({
 
     name: {
