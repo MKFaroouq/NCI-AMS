@@ -2,9 +2,8 @@ require("dotenv").config();
 
 const express = require('express');
 const mongoose = require('mongoose');
-const routes = require('./routes/bookingRoutes');
-
 const path = require('path');
+
 
 const bookingRoutes = require('./routes/bookingRoutes');
 const clinicRoutes  = require('./routes/clinicRoutes');
@@ -16,10 +15,11 @@ const app = express();
 app.use(express.json());
 
 // routes
-app.use('/api', routes);
+// app.use('/api', routes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/clinics',  clinicRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Connect to MongoDB
 async function DBconnection(){
     try{
