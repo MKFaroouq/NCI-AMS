@@ -60,39 +60,47 @@ async function adminLogin(req, res) {
 
 async function createBooking(req, res) {
     try {
-        // if theres no respond from body (user) 
+        // if there's no data privide from user at all
         if (!req.body) {
-            return res.status(400).json({ error: "please enter reqested data !" });
+            return res.status(400).json({ error: 'Please provide booking data' });
         }
 
-        // fetching data from body that user put it
+        // fetch the required fields from the request body
         const { patientName, nationalId, phoneNumber, governorate, clinicId } = req.body;
 
-        // nationalIdImage بييجي من Multer
+        // fetch the uploaded national ID image path if available
         const nationalIdImage = req.file ? req.file.path : null;
 
-        // check if nothing enterd by user
+        // Validation — data validation for required fields
         if (!patientName || !nationalId || !phoneNumber || !governorate || !clinicId) {
             return res.status(400).json({ error: "all fields are required" });
         }
 
         if (!nationalIdImage) {
-            return res.status(400).json({ error: 'please upload a photo of your national ID' });
+            return res.status(400).json({ error: "please upload a photo of your national ID" });
+        }
+
+        // Tesseract - see if the uploaded image is clear and valid for OCR
+        const isValidImage = await validateNationalIdImage(nationalIdImage, nationalId);
+
+        if (!isValidImage) {
+            return res.status(400).json({ 
+                error: 'the image is not clear or is not a valid national ID — please try again with a clearer image' 
+            });
         }
 
         // make sure the clinic exists and is active
         const clinic = await Clinic.findById(clinicId);
 
         if (!clinic) {
-            return res.status(404).json({ error: "this clinic does not exist" });
+            return res.status(404).json({ error: "clinic not found" });
         }
 
         if (!clinic.isActive) {
-            return res.status(400).json({ error: 'the clinic is not active at the moment' });
+            return res.status(400).json({ error: "clinic is not active" });
         }
 
-        // Rate Limit 
-        // one week limit — 3 bookings per patient
+        // Rate Limit - only 3 bookings per week per national ID
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
@@ -104,11 +112,11 @@ async function createBooking(req, res) {
 
         if (weeklyBookingCount >= 3) {
             return res.status(400).json({ 
-                error: "sorry, you have reached the maximum number of bookings allowed for this week (3 bookings)"
+                error: 'Sorry, you have reached the maximum limit (3 bookings in a week)' 
             });
         }
 
-        // 6. Daily Quota — per Clinic
+        // 8. Daily Quota — per Clinic
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
 
@@ -120,7 +128,7 @@ async function createBooking(req, res) {
 
         if (todayBookingsCount >= clinic.quota) {
             return res.status(400).json({ 
-                error: 'sorry, the clinic has reached its daily booking limit' 
+                error: 'Sorry, the clinic has reached its daily booking limit' 
             });
         }
 
@@ -134,19 +142,19 @@ async function createBooking(req, res) {
             nationalIdImage,
             status:      'pending',
             queueNumber: null,
-            bookingDate: null   // when make the approved by admin, the bookingDate will be set
+            bookingDate: null
         });
 
         await newBooking.save();
 
         return res.status(201).json({ 
-            message: "booking created successfully", 
+            message: 'Booking created successfully — under review', 
             booking: newBooking 
         });
 
     } catch (error) {
         console.error('Error in createBooking:', error);
-        return res.status(500).json({ error: "An error occurred while creating the booking" });
+        return res.status(500).json({ error: 'An error occurred while creating the booking' });
     }
 }
 
