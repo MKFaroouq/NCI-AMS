@@ -1,7 +1,4 @@
 const Clinic = require('../models/Clinic');
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-
 
 async function getClinics(req, res) {
     try {
