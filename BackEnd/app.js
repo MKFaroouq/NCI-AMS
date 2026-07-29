@@ -2,12 +2,12 @@ require("dotenv").config();
 
 const express = require('express');
 const mongoose = require('mongoose');
-const path = require('path');
+// const path = require('path');
 
 
 const bookingRoutes = require('./routes/bookingRoutes');
 const clinicRoutes  = require('./routes/clinicRoutes');
-
+const authRoutes    = require('./routes/authRoutes');
 const app = express();
 
 
@@ -16,9 +16,13 @@ app.use(express.json());
 
 // routes
 // app.use('/api', routes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/clinics',  clinicRoutes);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/api/auth", authRoutes);
+// note* : you can use app.use("/auth", authRoutes) becase that we use in routes login without auth
+app.use("/api", bookingRoutes);
+app.use("/api/clinics", clinicRoutes);
+
+
+// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Connect to MongoDB
 async function DBconnection(){
