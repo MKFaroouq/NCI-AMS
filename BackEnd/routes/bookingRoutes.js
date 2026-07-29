@@ -2,7 +2,7 @@ const express=require('express');
 const router=express.Router();
 const auth = require('../middleware/auth');
 
-const { createBooking , getAllBookings } = require('../controllers/bookingController');
+const { createBooking , getAllBookings , approveBooking , rejectBooking } = require('../controllers/bookingController');
 
 
 // POST /api/bookings
@@ -12,5 +12,10 @@ router.post('/bookings', createBooking);
 // GET /api/bookings
 router.get('/bookings', auth , getAllBookings);
 
+// PATCH /api/bookings/:id/approve
+router.patch('/bookings/:id/approve', auth, approveBooking);
+
+// PATCH /api/bookings/:id/reject
+router.patch('/bookings/:id/reject', auth, rejectBooking);
 
 module.exports = router;
