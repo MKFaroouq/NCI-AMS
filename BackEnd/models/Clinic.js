@@ -5,12 +5,15 @@ const clinicSchema = new mongoose.Schema({
     name: {
         type:     String,
         required: true,
-        trim:     true
+        trim:     true,
+        unique:   true,
+
     },
 
-    quota: {
+    dailyQuota: {
         type:    Number,
-        default: 100
+        default: 100,
+        min:     1,
     },
 
     isActive: {
