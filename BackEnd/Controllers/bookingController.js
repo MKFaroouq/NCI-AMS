@@ -88,7 +88,35 @@ async function createBooking(req, res) {
     }
 }
 
+// function 2 : get all bookings
+
+async function getAllBookings(req, res) {
+    try {
+        const bookings = await Booking.find().sort({ createdAt: -1 });
+        
+        // if theres no bookings
+        if (bookings.length === 0) {
+            console.log('No bookings found');
+            return res.status(404).json({ error: 'No bookings found' });
+        }
+
+        // return all booking 
+        return res.status(200).json({
+             count: bookings.length,
+             message: 'Bookings fetched successfully',
+             data:{
+                bookings: bookings
+             }
+            });
+
+    } catch (error) {
+        return res.status(500).json({ 
+            error: 'An error occurred while fetching bookings', msg: error.message
+         });
+    }
+}
+
 module.exports = {
     createBooking,
-
+    getAllBookings
 };
