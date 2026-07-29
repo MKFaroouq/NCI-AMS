@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const {Booking} =require('../models/PatientRequest');
+const {Booking , Counter } =require('../models/PatientRequest');
 const Clinic  = require('../models/Clinic');
 
 
@@ -116,7 +116,102 @@ async function getAllBookings(req, res) {
     }
 }
 
+// function 3 : approve a booking and assign queue number and booking date
+
+async function approveBooking(req, res) {
+    try {
+        // get booking id
+        const bookingId = req.params.id;
+
+        // find the booking by id
+        const booking = await Booking.findById(bookingId);
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        // only approve if the booking is pending
+        if (booking.status !== 'pending') {
+            return res.status(400).json({ error: 'Only pending bookings can be approved' });
+        }    
+
+        // get today's date
+        const today = new Date().toISOString().split('T')[0];
+
+        // create count id
+        const counterId = `${booking.clinicId}_${today}`;
+ 
+        // Generate queue number
+        const counter = await Counter.findByIdAndUpdate(
+            counterId,
+            {
+                $inc: { seq: 1 }
+            },
+            {
+                new: true,
+                upsert: true
+            }
+        );
+
+
+        // update the booking status to approved
+        booking.queueNumber = counter.seq;
+        booking.bookingDate = today;
+        booking.status = "approved";
+
+        // save the updated booking
+        await booking.save();
+
+        return res.status(200).json({ message: 'Booking approved successfully', booking });
+    } catch (error) {
+        return res.status(500).json({ error: 'An error occurred while approving the booking', msg: error.message });
+    }
+}
+
+// function 4 : reject a booking
+
+async function rejectBooking(req, res) {
+    try {
+        // get booking id
+        const bookingId = req.params.id;
+
+        // find the booking by id
+        const booking = await Booking.findById(bookingId);
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+
+        // only reject if the booking is pending
+        if (booking.status !== 'pending') {
+            return res.status(400).json({ error: 'Only pending bookings can be rejected' });
+        }    
+
+        // get today's date
+        // const today = new Date().toISOString().split('T')[0];
+
+
+        // update the booking status to rejected
+
+        // booking.queueNumber = null;
+
+        booking.status = "rejected";
+        booking.rejectedAt = new Date();
+
+
+        // save the updated booking
+        await booking.save();
+
+        return res.status(200).json({ message: 'Booking rejected successfully', booking });
+    } catch (error) {
+        return res.status(500).json({ error: 'An error occurred while rejecting the booking', msg: error.message });
+    }
+}
+
 module.exports = {
     createBooking,
-    getAllBookings
+    getAllBookings,
+    approveBooking,
+    rejectBooking
 };
+
