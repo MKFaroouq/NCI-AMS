@@ -41,11 +41,13 @@ const bookingSchema = new mongoose.Schema({
     governorate: {
         type:     String,
         required: true,
-        trim:     true
+        trim:     true,
+        default:  'menoufia' // default value, can't be changed later
     },
     nationalIdImage: {
         type:     String,   // المسار بعد رفع الصورة بـ Multer
-        required: true
+        // required: true,
+        default:  null
     },
 
     // ---------- بيانات الحجز ----------
