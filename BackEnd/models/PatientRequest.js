@@ -78,6 +78,10 @@ const bookingSchema = new mongoose.Schema({
         type:    String,   // format: "YYYY-MM-DD"
         default: null      // ❌ مش required — بيتملى عند الـ Approval
     },
+    rejectedAt: {
+    type: Date,
+    default: null
+    },
     qrCode: {
         type:    String,
         default: null
