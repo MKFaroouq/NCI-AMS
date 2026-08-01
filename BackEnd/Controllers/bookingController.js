@@ -221,7 +221,12 @@ async function exportBookings(req, res) {
         if (!clinic) {
             return res.status(404).json({ error: 'Clinic not found' });
         }
-        
+        const countApproved = await Booking.countDocuments({
+            status: "approved"
+        });
+
+        console.log("Approved:", countApproved);        
+
         const bookings = await Booking.find({ clinicId , status:"approved"}).populate('clinicId')
 
         if (bookings.length === 0) {
@@ -257,7 +262,22 @@ async function exportBookings(req, res) {
                 status: booking.status,
                 nationalIdImage: booking.nationalIdImage ? booking.nationalIdImage : 'N/A' 
             });
-        }
+        };
+
+
+            // Update exported bookings
+            await Booking.updateMany(
+                {
+                    clinicId: clinic._id,
+                    status: "approved"
+                },
+                {
+                    $set: {
+                        status: "exported"
+                    }
+                }
+            );
+              
 
         // console.log(workbook);
 
@@ -291,11 +311,148 @@ async function exportBookings(req, res) {
     }
 }
 
+    // function 6 : Export all bookings to excel file
+
+    async function exportAllBookings(req, res) {
+        try {
+
+        // Get all active clinics
+        const clinics = await Clinic.find({ isActive: true });
+
+        if (clinics.length === 0) {
+            return res.status(404).json({
+                error: "No active clinics found"
+            });
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        // Loop through all clinics
+        for (const clinic of clinics) {
+
+            // Create worksheet for each clinic
+            const worksheet = workbook.addWorksheet(clinic.name);
+
+            // Worksheet Columns
+            worksheet.columns = [
+                { header: "Queue Number", key: "queueNumber", width: 15 },
+                { header: "Patient Name", key: "patientName", width: 30 },
+                { header: "National ID", key: "nationalId", width: 20 },
+                { header: "Phone Number", key: "phoneNumber", width: 20 },
+                { header: "Booking Date", key: "bookingDate", width: 20 },
+                { header: "Status", key: "status", width: 15 }
+            ];
+
+            // Get approved bookings for this clinic
+            const bookings = await Booking.find({
+                clinicId: clinic._id,
+                status: "approved"
+            });
+
+            console.log("Clinic:", clinic.name);
+            console.log("Bookings Count:", bookings.length);
+
+            // Skip if no bookings
+            if (bookings.length === 0) {
+                continue;
+            }
+            // Add rows
+            for (const booking of bookings) {
+                worksheet.addRow({
+                    queueNumber: booking.queueNumber,
+                    patientName: booking.patientName,
+                    nationalId: booking.nationalId,
+                    phoneNumber: booking.phoneNumber,
+                    bookingDate: booking.bookingDate,
+                    status: booking.status
+                });
+            }
+
+            // Update exported bookings
+            await Booking.updateMany(
+                {
+                    clinicId: clinic._id,
+                    status: "approved"
+                },
+                {
+                    $set: {
+                        status: "exported"
+                    }
+                }
+            );
+        }
+
+        // File name
+        const fileName = `NCI-Q-${Date.now()}.xlsx`;
+        const filePath = path.join(__dirname, '..', 'exports', fileName);
+
+        // Save workbook
+        await workbook.xlsx.writeFile(filePath);
+
+        // Download file
+            res.download(filePath, fileName, (err) => {
+            if (err) {
+                console.error('Error downloading the file:', err);
+                res.status(500).send('Error downloading the file');
+            }
+        });
+
+        console.log(filePath);
+
+    } catch (error) {
+
+        return res.status(500).json({
+            error: "An error occurred while exporting bookings",
+            msg: error.message
+        });
+
+    }
+            
+}
+
+// function 7 : delete a booking
+
+async function deleteBooking(req, res) {
+    try {
+        const bookingId = req.params.id;
+
+        const booking = await Booking.findById(bookingId);
+
+        if (!booking) {
+            return res.status(404).json({
+                error: "Booking not found"
+            });
+        }
+
+        // delete booking
+        await Booking.findByIdAndDelete(bookingId);
+
+        // only pending or rejected bookings can be deleted
+        if (!["pending", "rejected"].includes(booking.status)) {
+            return res.status(400).json({
+                error: "Only pending or rejected bookings can be deleted"
+            });
+}
+        // success response
+        return res.status(200).json({
+            message: "Booking deleted successfully"
+        });
+
+
+    } catch (error) {
+        return res.status(500).json({
+            error: "An error occurred while deleting the booking",
+            msg: error.message
+        });
+    }
+}
+
 module.exports = {
     createBooking,
     getAllBookings,
     approveBooking,
     rejectBooking,
-    exportBookings
+    exportBookings,
+    exportAllBookings,
+    deleteBooking
 };
 
