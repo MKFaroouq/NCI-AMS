@@ -10,6 +10,7 @@ const clinicRoutes  = require('./routes/clinicRoutes');
 const authRoutes    = require('./routes/authRoutes');
 const app = express();
 
+const excel = require('exceljs'); // Import the exceljs library for Excel file generation
 
 // Middleware to parse JSON bodies
 app.use(express.json());
