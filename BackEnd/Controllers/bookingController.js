@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const {Booking , Counter } =require('../models/PatientRequest');
 const Clinic  = require('../models/Clinic');
+const ExcelJS = require('exceljs');
+const path = require('path');
 
 
 // function 1 : craete a booking
@@ -226,9 +228,64 @@ async function exportBookings(req, res) {
             return res.status(404).json({ error: 'No approved bookings found for this clinic' });
         }
 
-        // Here you would typically use a library like exceljs or xlsx to create the Excel file
-        // For now, we'll just send the data as JSON
-        res.status(200).json({ count: bookings.length, message: 'Bookings exported successfully', data: bookings });
+        // export per clinic
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(clinic.name);
+
+        worksheet.columns = [
+            { header: 'Booking ID', key: '_id', width: 30 },
+            { header: 'Patient Name', key: 'patientName', width: 30 },
+            { header: 'National ID', key: 'nationalId', width: 20 },
+            { header: 'Phone Number', key: 'phoneNumber', width: 20 },
+            { header: 'Clinic Name', key: 'clinicName', width: 30 },
+            { header: 'Queue Number', key: 'queueNumber', width: 15 },
+            { header: 'Booking Date', key: 'bookingDate', width: 20 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'National ID Image', key: 'nationalIdImage', width: 30 }
+        ];
+
+        // Add rows to the worksheet by using loop into the bookings data
+        for (const booking of bookings) {
+            worksheet.addRow({
+                _id: booking._id.toString(),
+                patientName: booking.patientName,
+                nationalId: booking.nationalId,
+                phoneNumber: booking.phoneNumber,
+                clinicName: booking.clinicId.name,
+                queueNumber: booking.queueNumber,
+                bookingDate: booking.bookingDate,
+                status: booking.status,
+                nationalIdImage: booking.nationalIdImage ? booking.nationalIdImage : 'N/A' 
+            });
+        }
+
+        // console.log(workbook);
+
+        // Generate a unique filename for the Excel file ( clinic name + timestamp)
+        const fileName = `${clinic.name}-${Date.now()}.xlsx`;
+
+        const filePath = path.join(__dirname, '..', 'exports', fileName);
+        
+        //save the workbook to a file => in dir exports
+        await workbook.xlsx.writeFile(filePath);
+
+        return res.status(200).json({
+            message: "Excel file created successfully",
+            fileName,
+            msg: "Bookings exported successfully",
+            data:{
+                count: bookings.length,
+                bookings: bookings
+            }
+        }); 
+        
+        res.download(filePath, fileName, (err) => {
+            if (err) {
+                console.error('Error downloading the file:', err);
+                res.status(500).send('Error downloading the file');
+            }
+        });
+
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while exporting bookings', msg: error.message });
     }
