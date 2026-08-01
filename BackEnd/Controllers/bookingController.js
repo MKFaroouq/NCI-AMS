@@ -208,10 +208,37 @@ async function rejectBooking(req, res) {
     }
 }
 
+// function 5 : export bookings to excel file
+
+async function exportBookings(req, res) {
+    try {
+        const clinicId = req.params.clinicId;
+
+        const clinic = await Clinic.findById(clinicId);
+
+        if (!clinic) {
+            return res.status(404).json({ error: 'Clinic not found' });
+        }
+        
+        const bookings = await Booking.find({ clinicId , status:"approved"}).populate('clinicId')
+
+        if (bookings.length === 0) {
+            return res.status(404).json({ error: 'No approved bookings found for this clinic' });
+        }
+
+        // Here you would typically use a library like exceljs or xlsx to create the Excel file
+        // For now, we'll just send the data as JSON
+        res.status(200).json({ count: bookings.length, message: 'Bookings exported successfully', data: bookings });
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while exporting bookings', msg: error.message });
+    }
+}
+
 module.exports = {
     createBooking,
     getAllBookings,
     approveBooking,
-    rejectBooking
+    rejectBooking,
+    exportBookings
 };
 
