@@ -2,7 +2,7 @@ const express=require('express');
 const router=express.Router();
 const auth = require('../middleware/auth');
 
-const { createBooking , getAllBookings , approveBooking , rejectBooking } = require('../controllers/bookingController');
+const { createBooking , getAllBookings , approveBooking , rejectBooking , exportBookings} = require('../controllers/bookingController');
 
 
 // POST /api/bookings
@@ -17,5 +17,8 @@ router.patch('/bookings/:id/approve', auth, approveBooking);
 
 // PATCH /api/bookings/:id/reject
 router.patch('/bookings/:id/reject', auth, rejectBooking);
+
+// Export the booking to excel file
+router.post('/bookings/export/:clinicId', auth, exportBookings)
 
 module.exports = router;
