@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getPatientBookings } from "./api/bookingApi";
 
 const CheckStatus = () => {
     const [nationalId, setNationalId] = useState('');
