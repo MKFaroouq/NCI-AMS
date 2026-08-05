@@ -4,7 +4,6 @@ const Clinic  = require('../models/Clinic');
 const ExcelJS = require('exceljs');
 const path = require('path');
 
-
 // function 1 : craete a booking
 
 async function createBooking(req, res) {
@@ -22,6 +21,12 @@ async function createBooking(req, res) {
         if (!patientName || !nationalId || !phoneNumber || !clinicId ) {
             return res.status(400).json({ error: "all fields are required" });
         }
+
+        const cleanphoneNumber = phoneNumber.replace(/\D/g, "");   
+        const cleanNationalId = nationalId.replace(/\D/g, "");
+
+        console.log(req.body);
+        console.log("Phone:", req.body.phoneNumber);
 
 
         // make sure the clinic exists and is active
@@ -67,15 +72,17 @@ async function createBooking(req, res) {
             });
         }
 
+        console.log(/^01[0125]\d{8}$/.test(req.body.phoneNumber));
+
         // save the new booking to the database
         const newBooking = new Booking({
             patientName,
-            nationalId,
-            phoneNumber,
+            nationalId : cleanNationalId,
+            phoneNumber: cleanphoneNumber,
             clinicId,
             status:      'pending',
             queueNumber: null,
-            bookingDate: null
+            // bookingDate: null
         });
 
         await newBooking.save();
@@ -446,6 +453,58 @@ async function deleteBooking(req, res) {
     }
 }
 
+// function 8 : get patient by national id for specific patient
+
+// function 8 : get all bookings for a specific patient
+
+async function getPatientBookings(req, res) {
+    try {
+
+        // get national id from params
+        const { nationalId } = req.params;
+
+        // validate national id
+        if (!nationalId) {
+            return res.status(400).json({
+                error: "National ID is required"
+            });
+        }
+
+        // national id must be 14 digits
+        if (!/^\d{14}$/.test(nationalId)) {
+            return res.status(400).json({
+                error: "National ID must be exactly 14 digits"
+            });
+        }
+
+        // get all bookings for this patient
+        const bookings = await Booking.find({ nationalId })
+            .populate("clinicId", "name")
+            .sort({ createdAt: -1 });
+
+        // no bookings found
+        if (bookings.length === 0) {
+            return res.status(404).json({
+                message: "No bookings found for this National ID"
+            });
+        }
+
+        // success response
+        return res.status(200).json({
+            count: bookings.length,
+            bookings
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            error: "An error occurred while fetching patient bookings",
+            msg: error.message
+        });
+
+    }
+}
+
 module.exports = {
     createBooking,
     getAllBookings,
@@ -453,6 +512,7 @@ module.exports = {
     rejectBooking,
     exportBookings,
     exportAllBookings,
-    deleteBooking
+    deleteBooking,
+    getPatientBookings
 };
 
