@@ -229,3 +229,174 @@ footer {
         gap: 0;
     }
 }
+
+
+/* =========================
+   Check Status
+========================= */
+
+.status-card {
+    margin-top: 25px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0,0,0,.08);
+    border: 1px solid #e5e7eb;
+}
+
+.status-title{
+    font-size:22px;
+    font-weight:700;
+    color:#0c2340;
+    margin-bottom:20px;
+}
+
+.status-info{
+    display:flex;
+    justify-content:space-between;
+    padding:12px 0;
+    border-bottom:1px solid #f1f5f9;
+}
+
+.status-info:last-child{
+    border-bottom:none;
+}
+
+.status-label{
+    color:#64748b;
+    font-weight:600;
+}
+
+.status-value{
+    color:#0f172a;
+    font-weight:700;
+}
+
+.status-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:8px 18px;
+    border-radius:999px;
+    font-weight:700;
+    margin:20px auto;
+}
+
+.status-badge.pending{
+    background:#fef3c7;
+    color:#b45309;
+}
+
+.status-badge.approved{
+    background:#dcfce7;
+    color:#15803d;
+}
+
+.status-badge.rejected{
+    background:#fee2e2;
+    color:#b91c1c;
+}
+
+.queue-card{
+    margin-top:25px;
+    background:#0c2340;
+    color:white;
+    border-radius:14px;
+    padding:30px;
+    text-align:center;
+}
+
+.queue-card h2{
+    font-size:15px;
+    margin-bottom:15px;
+    color:#cbd5e1;
+}
+
+.queue-number{
+    font-size:60px;
+    font-weight:bold;
+    color:#22c55e;
+}
+
+.timeline{
+    margin-top:30px;
+    border-left:3px solid #cbd5e1;
+    padding-left:20px;
+}
+
+.timeline-item{
+    margin-bottom:18px;
+    position:relative;
+}
+
+.timeline-item::before{
+    content:"";
+    position:absolute;
+    left:-28px;
+    top:4px;
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    background:#94a3b8;
+}
+
+.timeline-item.active::before{
+    background:#22c55e;
+}
+
+.timeline-title{
+    font-weight:700;
+}
+
+.timeline-text{
+    color:#64748b;
+    font-size:14px;
+}
+
+.print-btn{
+    margin-top:25px;
+    width:100%;
+    background:#16a34a;
+    color:white;
+    border:none;
+    border-radius:8px;
+    padding:14px;
+    cursor:pointer;
+    font-size:16px;
+    font-weight:bold;
+    transition:.25s;
+}
+
+.print-btn:hover{
+    background:#15803d;
+}
+
+.loading-box{
+    text-align:center;
+    padding:30px;
+}
+
+.spinner{
+    width:45px;
+    height:45px;
+    border:5px solid #ddd;
+    border-top-color:#0c2340;
+    border-radius:50%;
+    margin:auto;
+    animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+.error-box{
+    margin-top:20px;
+    padding:15px;
+    background:#fee2e2;
+    color:#b91c1c;
+    border-radius:10px;
+    text-align:center;
+}

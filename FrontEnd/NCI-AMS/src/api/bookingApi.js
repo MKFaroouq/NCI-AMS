@@ -1,5 +1,5 @@
 // كل الـ requests بتاعة الحجز والعيادات في مكان واحد
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 // جلب قائمة العيادات عشان الـ dropdown
 export async function getClinics() {
@@ -14,10 +14,13 @@ export async function getClinics() {
 }
 
 // إنشاء حجز جديد - multipart لأن فيها صورة البطاقة
-export async function createBooking(formData) {
+export async function createBooking(bookingData) {
     const res = await fetch(`${BASE_URL}/bookings`, {
         method: "POST",
-        body: formData,
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(bookingData)
     });
 
     const data = await res.json();
@@ -31,13 +34,31 @@ export async function createBooking(formData) {
 
 // الاستعلام عن حالة الحجز بالرقم القومي
 export async function checkBookingStatus(nationalId) {
-    const res = await fetch(`${BASE_URL}/bookings/status/${nationalId}`); // 👈 s
+  const res = await fetch(`${BASE_URL}/bookings/patient/${nationalId}`);
 
     const data = await res.json();
 
     if (!res.ok) {
-        throw new Error(data.error || "عفواً، لا يوجد حجز مسجل بهذا الرقم القومي");
+        throw new Error(data.error || "Sorry, no booking found with this national ID");
     }
 
     return data; // بيرجع الـ booking object مباشرة، مش متغلف جوه key
+}
+
+// ======================================
+// Get Patient Bookings By National ID
+// GET /api/bookings/patient/:nationalId
+// ======================================
+export async function getPatientBookings(nationalId) {
+  const response = await fetch(
+    `${BASE_URL}/bookings/patient/${nationalId}`
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to fetch bookings");
+  }
+
+  return data;
 }

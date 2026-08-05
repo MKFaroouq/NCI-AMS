@@ -1,42 +1,67 @@
-import { useEffect, useState } from "react";
-import { getClinics, createBooking } from "../api/bookingApi";
+import { useEffect, useRef, useState } from "react";
+// import axios from "axios";
+import logo from "../assets/mcilogo.png";
+import CheckStatus from '../CheckStatus.jsx';
+import Swal from 'sweetalert2';
 
-// الشكل الأولي للفورم - كل الحقول فاضية
+// import { getClinics, createBooking } from "../api/bookingApi";
+const API_URL = "http://localhost:8000/api";
+
 const initialForm = {
   patientName: "",
   nationalId: "",
   phone: "",
+  governorate: "Menoufia",
   clinicId: "",
-  department: "",
 };
 
 function PatientBookingPage() {
-  const [clinics, setClinics] = useState([]);
-  const [clinicsLoading, setClinicsLoading] = useState(true);
-  const [clinicsError, setClinicsError] = useState("");
 
-  const [form, setForm] = useState(initialForm);
-  const [idImage, setIdImage] = useState(null);
+const [activeTab, setActiveTab] = useState('bookings');
+  
+// Page Data
+const [clinics, setClinics] = useState([]);
 
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+// Loading States
+const [clinicsLoading, setClinicsLoading] = useState(true);
+const [submitting, setSubmitting] = useState(false);
 
-  // بنجيب قائمة العيادات مرة واحدة لما الصفحة تفتح
+// Error States
+const [clinicsError, setClinicsError] = useState("");
+const [submitError, setSubmitError] = useState("");
+
+// Form State
+const [form, setForm] = useState(initialForm);
+const [idImage, setIdImage] = useState(null);
+
+// UI State
+const [successMessage, setSuccessMessage] = useState("");
+
+
+// const [idImage, setIdImage] = useState(null);
+
+// get all clinics from the backend - Fetch clinics when the page loads
   useEffect(() => {
     async function loadClinics() {
       try {
-        const data = await getClinics();
-        setClinics(data);
-      } catch (err) {
-        setClinicsError(err.message);
-      } finally {
+    const response = await axios.get(`${API_URL}/clinics`);
+        setClinics(response.data);
+      } catch (error) {
+        console.log(error);
+        console.log(error.response);
+        console.log(error.message);
+        console.log(error.response);       
+
+  setClinicsError(error.message);
+}
+       finally {
         setClinicsLoading(false);
       }
     }
 
     loadClinics();
   }, []);
+   
 
   // handler عام لأي input نصي (بنستخدم name بتاع الـ input)
   function handleChange(e) {
@@ -44,10 +69,10 @@ function PatientBookingPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  function handleImageChange(e) {
-    const file = e.target.files[0];
-    setIdImage(file || null);
-  }
+  // const function handleImageChange(e) {
+  //   const file = e.target.files[0];
+  //   setIdImage(file || null);
+  // }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -79,8 +104,8 @@ function PatientBookingPage() {
       );
       setForm(initialForm);
       setIdImage(null);
-    } catch (err) {
-      setSubmitError(err.message);
+    } catch (error) {
+      setSubmitError(error.message);
     } finally {
       setSubmitting(false);
     }
@@ -109,134 +134,143 @@ function PatientBookingPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-clinic-50 py-10 px-4">
-      <div className="max-w-md mx-auto">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-clinic-900">
-            حجز كشف جديد
-          </h1>
-          <p className="text-slate-500 mt-1 text-sm">
-            املأ بياناتك وهيتم مراجعة الطلب من موظف الاستقبال
-          </p>
+    return (
+        <div dir="rtl">
+            <header>
+                <div className="logo-area">
+                    <img src={logo} alt="Logo" className="mci-logo-img" />
+                    <span className="logo-text">معهد الاورام - جامعة المنوفية</span>
+                </div>
+
+                <button
+                    type="button"
+                    className={`toggle-btn ${activeTab === 'status' ? 'status-mode' : ''}`}
+                    onClick={() => setActiveTab(activeTab === 'booking' ? 'status' : 'booking')}
+                >
+                    {activeTab === 'booking' ? 'الاستعلام عن الدور' : 'العودة للحجز'}
+                </button>
+            </header>
+
+            <main className="main-content">
+                <div className="login-card">
+                    {activeTab === 'booking' ? (
+                        <>
+                            <h2 className="card-title">الدخول إلى البوابة</h2>
+                            <p className="card-subtitle">يرجى إدخال بياناتك للمتابعة</p>
+
+                            <form onSubmit={handleSubmit}>
+                                <div className="form-group">
+                                    <label htmlFor="nationalId">الرقم القومي</label>
+                                    <input
+                                        type="text"
+                                        id="nationalId"
+                                        name="nationalId"
+                                        maxLength={14}
+                                        className="form-control"
+                                        placeholder="اكتب الـ 14 رقم بالكامل"
+                                        disabled={isSubmitting}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="patientName">اسم المريض بالكامل</label>
+                                    <input
+                                        type="text"
+                                        id="patientName"
+                                        name="patientName"
+                                        className="form-control"
+                                        placeholder="كما هو مكتوب في البطاقة الشخصية"
+                                        disabled={isSubmitting}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="governorate">المحافظة</label>
+                                    <input
+                                        type="text"
+                                        id="governorate"
+                                        name="governorate"
+                                        className="form-control"
+                                        placeholder="مثال: المنوفية"
+                                        disabled={isSubmitting}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="clinicId">العيادة</label>
+                                    {clinicsLoading ? (
+                                        <p>جاري تحميل العيادات...</p>
+                                    ) : clinicsError ? (
+                                        <p style={{ color: '#dc2626' }}>{clinicsError}</p>
+                                    ) : (
+                                        <select
+                                            id="clinicId"
+                                            name="clinicId"
+                                            className="form-control select-custom"
+                                            defaultValue=""
+                                            disabled={isSubmitting}
+                                            required
+                                        >
+                                            <option value="" disabled>اختر العيادة</option>
+                                            {clinics.map((clinic) => (
+                                                <option key={clinic._id} value={clinic._id}>
+                                                    {clinic.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="nationalIdImage">صورة البطاقة الشخصية</label>
+                                    <input
+                                        type="file"
+                                        id="nationalIdImage"
+                                        name="nationalIdImage"
+                                        accept="image/*"
+                                        className="form-control"
+                                        disabled={isSubmitting}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="row-inputs">
+                                    <div className="form-group">
+                                        <label htmlFor="phoneNumber">رقم الموبايل</label>
+                                        <input
+                                            type="tel"
+                                            id="phoneNumber"
+                                            name="phoneNumber"
+                                            className="form-control ltr-input"
+                                            placeholder="01X XXXX XXXX"
+                                            disabled={isSubmitting}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <button type="submit" className="submit-btn" disabled={isSubmitting}>
+                                    {isSubmitting ? 'جاري الإرسال...' : 'دخول البوابة'}
+                                </button>
+                            </form>
+                        </>
+                    ) : (
+                        <CheckStatus />
+                    )}
+                </div>
+            </main>
+
+            <footer>
+                <div className="footer-detail">
+                    <h3 className="footer-title">معهد الأورام - جامعة المنوفية</h3>
+                    <p className="footer-subtitle">مدينة شبين الكوم - محافظة المنوفية - مصر</p>
+                </div>
+                <div className="footer-copyright">معهد الأورام . جميع الحقوق محفوظة 2026 &copy;</div>
+            </footer>
         </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-2xl shadow-sm border border-clinic-100 p-6 space-y-4"
-        >
-          {submitError && (
-            <div className="bg-red-50 text-red-700 text-sm rounded-lg px-4 py-3 border border-red-100">
-              {submitError}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              الاسم بالكامل
-            </label>
-            <input
-              type="text"
-              name="patientName"
-              value={form.patientName}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-clinic-600 focus:border-clinic-600"
-              placeholder="اسمك زي ما هو في البطاقة"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              الرقم القومي
-            </label>
-            <input
-              type="text"
-              name="nationalId"
-              value={form.nationalId}
-              onChange={handleChange}
-              maxLength={14}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-clinic-600 focus:border-clinic-600"
-              placeholder="14 رقم"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              رقم الموبايل
-            </label>
-            <input
-              type="tel"
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-clinic-600 focus:border-clinic-600"
-              placeholder="01xxxxxxxxx"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              العيادة
-            </label>
-
-            {clinicsLoading ? (
-              <p className="text-sm text-slate-400">جاري تحميل العيادات...</p>
-            ) : clinicsError ? (
-              <p className="text-sm text-red-600">{clinicsError}</p>
-            ) : (
-              <select
-                name="clinicId"
-                value={form.clinicId}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-clinic-600 focus:border-clinic-600"
-              >
-                <option value="">اختر العيادة</option>
-                {clinics.map((clinic) => (
-                  <option key={clinic._id} value={clinic._id}>
-                    {clinic.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              القسم (اختياري)
-            </label>
-            <input
-              type="text"
-              name="department"
-              value={form.department}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-clinic-600 focus:border-clinic-600"
-              placeholder="مثال: جراحة عامة"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              صورة البطاقة (اختياري)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-clinic-100 file:text-clinic-700 file:font-medium"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-cta-500 hover:bg-cta-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-lg transition-colors"
-          >
-            {submitting ? "جاري الإرسال..." : "إرسال الطلب"}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
+    )};
 
 export default PatientBookingPage;
