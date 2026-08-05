@@ -9,12 +9,14 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const clinicRoutes  = require('./routes/clinicRoutes');
 const authRoutes    = require('./routes/authRoutes');
 const app = express();
-
 const excel = require('exceljs'); // Import the exceljs library for Excel file generation
+const cors = require("cors");
+
 
 // Middleware to parse JSON bodies
 app.use(express.json());
 
+app.use(cors());
 // routes
 // app.use('/api', routes);
 app.use("/api/auth", authRoutes);
