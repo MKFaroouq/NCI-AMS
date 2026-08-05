@@ -75,8 +75,8 @@ const bookingSchema = new mongoose.Schema({
         default: null
     },
     bookingDate: {
-        type:    String,   // format: "YYYY-MM-DD"
-        default: null      // ❌ مش required — بيتملى عند الـ Approval
+        type:    Date,   // format: "YYYY-MM-DD" // used to be string now is date
+        default: Date.now,      // ❌ مش required — بيتملى عند الـ Approval
     },
     rejectedAt: {
     type: Date,
