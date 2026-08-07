@@ -50,24 +50,45 @@ const CheckStatus = () => {
   // =========================
   // Status Badge Color
   // =========================
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "approved":
-        return "#16a34a";
-
-      case "pending":
-        return "#ca8a04";
-
-      case "rejected":
-        return "#dc2626";
-
-      case "exported":
-        return "#2563eb";
-
-      default:
-        return "#64748b";
-    }
+  const statusMap = {
+    pending: {
+      text: "Pending Review",
+      color: "#f59e0b",
+    },
+    approved: {
+      text: "Approved",
+      color: "#22c55e",
+    },
+    rejected: {
+      text: "Rejected",
+      color: "#ef4444",
+    },
+    exported: {
+      // المريض يشوفها Approved مش Exported
+      text: "Approved",
+      color: "#22c55e",
+    },
   };
+  /* // old code using switch statement
+  const getStatusColor = (status) => {
+  switch (status) {
+    case "approved":
+      return "#16a34a";
+
+    case "exported":
+      return "#16a34a";
+
+    case "pending":
+      return "#ca8a04";
+
+    case "rejected":
+      return "#dc2626";
+
+    default:
+      return "#64748b";
+  }
+};
+*/
 
   return (
     <>
@@ -125,60 +146,64 @@ const CheckStatus = () => {
           }}
         >
           {bookings.map((booking) => (
-            <div
-              key={booking._id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: "8px",
-                padding: "18px",
-                marginBottom: "18px",
-              }}
-            >
+              <div className="booking-card" key={booking._id}>
               <h3>{booking.patientName}</h3>
 
-              <p>
-                <strong>Clinic:</strong>{" "}
-                {booking.clinicId?.name}
-              </p>
+              <div className="booking-row">
+                  <span>Clinic</span>
+                  <strong>{booking.clinicId?.name}</strong>
+              </div>
 
-              <p>
-                <strong>Booking Date:</strong>{" "}
-                {new Date(
-                  booking.bookingDate
-                ).toLocaleDateString()}
-              </p>
+            <div className="booking-row">
+                <span>Booking Date</span>
 
-              <p>
-                <strong>Status:</strong>{" "}
+                <strong>
+                    {new Date(
+                        booking.bookingDate
+                    ).toLocaleDateString("en-GB")}
+                </strong>
+            </div>
+
+              <div className="status-row">
+                <span>Status</span>
+
                 <span
+                  className="status-badge"
                   style={{
-                    color: getStatusColor(
-                      booking.status
-                    ),
-                    fontWeight: "bold",
+                    backgroundColor: statusMap[booking.status]?.color,
                   }}
                 >
-                  {booking.status}
+                  {booking.status === "pending"}
+                  {(booking.status === "approved" ||
+                    booking.status === "exported")}
+                  {booking.status === "rejected"}
+
+                  {statusMap[booking.status]?.text}
                 </span>
-              </p>
+              </div>
 
               {booking.status ===
-                "approved" && (
+                "approved" || booking.status === "exported" &&  (
                 <>
-                  <p>
-                    <strong>
-                      Queue Number:
-                    </strong>{" "}
-                    {booking.queueNumber}
-                  </p>
 
-                  {booking.qrCode && (
+                  {/* =========================
+                      V2 Feature
+                      QR Code will be added after
+                      implementing ticket generation.
+                  ========================= */}         
+                         
+                {/* <div className="booking-row">
+                    <span>Queue Number</span>
+                    <strong>#{booking.queueNumber}</strong>
+                </div>
+
+                <div className="qr-container">
                     <img
-                      src={booking.qrCode}
-                      alt="QR Code"
-                      width={150}
+                        src={booking.qrCode}
+                        alt="QR Code"
+                        className="qr-image"
                     />
-                  )}
+                </div> */}
                 </>
               )}
 
