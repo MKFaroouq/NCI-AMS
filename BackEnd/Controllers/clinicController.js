@@ -3,7 +3,7 @@ const Clinic = require('../models/Clinic');
 async function getClinics(req, res) {
     try {
         // only active clinics should be fetched
-        const clinics = await Clinic.find({ isActive: true });
+        const clinics = await Clinic.find({ isActive: true }).sort({ name: 1 }); // Sort by name in ascending order
 
         if (clinics.length === 0) {
             return res.status(404).json({ error: "No active clinics found" });
@@ -59,5 +59,6 @@ async function addClinic(req, res) {
         return res.status(500).json({ error: 'حدث خطأ أثناء إضافة العيادة' });
     }
 }
+
 
 module.exports = { getClinics, addClinic };
