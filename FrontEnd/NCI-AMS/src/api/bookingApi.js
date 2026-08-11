@@ -62,3 +62,10 @@ export async function getPatientBookings(nationalId) {
 
   return data;
 }
+
+// export async function getAllBookings(token) {}
+
+// export async function approveBooking(id, token) {}
+
+// export async function rejectBooking(id, reason, token) {}
+

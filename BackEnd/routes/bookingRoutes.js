@@ -2,7 +2,8 @@ const express=require('express');
 const router=express.Router();
 const auth = require('../middleware/auth');
 
-const { createBooking , getAllBookings , approveBooking , rejectBooking , exportBookings , exportAllBookings , deleteBooking , getPatientBookings} = require('../controllers/bookingController');
+
+const { createBooking , getAllBookings , approveBooking , rejectBooking , exportBookings , exportAllBookings , deleteBooking , getPatientBookings , deleteAllBookings , approveAllBookings , rejectAllBookings} = require('../controllers/bookingController');
 
 
 // POST /api/bookings
@@ -30,5 +31,14 @@ router.delete('/bookings/:id', auth, deleteBooking);
 // get patient by national id for specific patient
 // GET /api/bookings/patient/:nationalId
 router.get('/bookings/patient/:nationalId', getPatientBookings);
+
+// DELETE /api/bookings
+router.delete("/bookings", auth, deleteAllBookings);
+
+// Approve all pending bookings
+router.put("/bookings/approve-all", auth, approveAllBookings);
+
+// Reject all pending bookings
+router.put("/bookings/reject-all", auth, rejectAllBookings);
 
 module.exports = router;

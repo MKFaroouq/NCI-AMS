@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 // import axios from "axios";
 import logo from "../assets/mcilogo.png";
-import CheckStatus from '../CheckStatus.jsx';
+import CheckStatus from './CheckStatus.jsx';
 import Swal from 'sweetalert2';
 
 // import { getClinics, createBooking } from "../api/bookingApi";

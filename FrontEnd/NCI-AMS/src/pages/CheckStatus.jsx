@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
-import { checkBookingStatus } from "./api/bookingApi";
+import { checkBookingStatus } from "../api/bookingApi";
 
 const CheckStatus = () => {
   // =========================

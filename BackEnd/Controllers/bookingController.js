@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const {Booking , Counter } =require('../models/PatientRequest');
 const Clinic  = require('../models/Clinic');
+const { getTodayDateString } = require("../utils/dateUtils");
 const ExcelJS = require('exceljs');
 const path = require('path');
 
@@ -66,7 +67,7 @@ async function createBooking(req, res) {
             createdAt: { $gte: startOfToday }
         });
 
-        if (todayBookingsCount >= clinic.quota) {
+        if (todayBookingsCount >= clinic.dailyQuota) {
             return res.status(400).json({ 
                 error: 'Sorry, the clinic has reached its daily booking limit' 
             });
@@ -101,7 +102,7 @@ async function createBooking(req, res) {
 
 async function getAllBookings(req, res) {
     try {
-        const bookings = await Booking.find().sort({ createdAt: -1 });
+        const bookings = await Booking.find().populate('clinicId', 'name').sort({ createdAt: -1 });
         
         // if theres no bookings
         if (bookings.length === 0) {
@@ -127,53 +128,359 @@ async function getAllBookings(req, res) {
 
 // function 3 : approve a booking and assign queue number and booking date
 
+// async function approveBooking(req, res) {
+//     try {
+//         // get booking id
+//         const bookingId = req.params.id;
+
+//         // find the booking by id
+//         const booking = await Booking.findById(bookingId);
+
+//         if (!booking) {
+//             return res.status(404).json({ error: 'Booking not found' });
+//         }
+
+//         // only approve if the booking is pending
+//         if (booking.status !== 'pending') {
+//             return res.status(400).json({ error: 'Only pending bookings can be approved' });
+//         }    
+
+//         // get today's date
+//         const today = new Date().toISOString().split('T')[0];
+
+//         // create count id
+//         const counterId = `${booking.clinicId}_${today}`;
+ 
+//         // Generate queue number
+//         const counter = await Counter.findByIdAndUpdate(
+//             counterId,
+//             {
+//                 $inc: { seq: 1 }
+//             },
+//             {
+//                 new: true,
+//                 upsert: true
+//             }
+//         );
+
+
+//         // update the booking status to approved
+//         booking.queueNumber = counter.seq;
+//         booking.bookingDate = today;
+//         booking.status = "approved";
+
+//         // save the updated booking
+//         await booking.save();
+
+//         return res.status(200).json({ message: 'Booking approved successfully', booking });
+//     } catch (error) {
+//         return res.status(500).json({ error: 'An error occurred while approving the booking', msg: error.message });
+//     }
+// }
+
+// async function approveBooking(req, res) {
+//     try {
+//         // =========================
+//         // Get Booking ID
+//         // =========================
+//         const bookingId = req.params.id;
+
+//         // =========================
+//         // Find Booking
+//         // =========================
+//         const booking = await Booking.findById(bookingId);
+
+//         if (!booking) {
+//             return res.status(404).json({
+//                 error: "Booking not found"
+//             });
+//         }
+
+//         // =========================
+//         // Check Booking Status
+//         // =========================
+//         if (booking.status !== "pending") {
+//             return res.status(400).json({
+//                 error: "Only pending bookings can be approved"
+//             });
+//         }
+
+//         // =========================
+//         // Get Today's Date
+//         // =========================
+//         const today = new Date();
+
+//         // Create a date without time
+//         today.setHours(0, 0, 0, 0);
+
+//         // =========================
+//         // Create Counter ID
+//         // =========================
+//         const dateString = today.toISOString().split("T")[0];
+
+//         const counterId = `${booking.clinicId}_${dateString}`;
+
+//         // =========================
+//         // Generate Queue Number
+//         // =========================
+//         const counter = await Counter.findOneAndUpdate(
+//             {
+//                 _id: counterId
+//             },
+//             {
+//                 $inc: {
+//                     seq: 1
+//                 }
+//             },
+//             {
+//                 upsert: true,
+//                 returnDocument: "after"
+//             }
+//         );
+
+//         // =========================
+//         // Update Booking
+//         // =========================
+//         booking.queueNumber = counter.seq;
+//         booking.bookingDate = today;
+//         booking.status = "approved";
+
+//         // =========================
+//         // Save Booking
+//         // =========================
+//         await booking.save();
+
+//         // =========================
+//         // Response
+//         // =========================
+//         return res.status(200).json({
+//             success: true,
+//             message: "Booking approved successfully",
+//             booking: booking
+//         });
+
+//     } catch (error) {
+
+//         console.error("Approve Booking Error:", error);
+
+//         return res.status(500).json({
+//             error: "An error occurred while approving the booking",
+//             message: error.message
+//         });
+//     }
+// }
+
+
+// ============================================================
+// Function : Approve a single booking
+// ============================================================
+
 async function approveBooking(req, res) {
     try {
-        // get booking id
+
+        // ========================================================
+        // 1. Get Booking ID
+        // ========================================================
+
         const bookingId = req.params.id;
 
-        // find the booking by id
+        // ========================================================
+        // 2. Find Booking
+        // ========================================================
+
         const booking = await Booking.findById(bookingId);
 
         if (!booking) {
-            return res.status(404).json({ error: 'Booking not found' });
+            return res.status(404).json({
+                error: "Booking not found"
+            });
         }
 
-        // only approve if the booking is pending
-        if (booking.status !== 'pending') {
-            return res.status(400).json({ error: 'Only pending bookings can be approved' });
-        }    
+        // ========================================================
+        // 3. Only pending bookings can be approved
+        // ========================================================
 
-        // get today's date
-        const today = new Date().toISOString().split('T')[0];
+        if (booking.status !== "pending") {
+            return res.status(400).json({
+                error: "Only pending bookings can be approved"
+            });
+        }
 
-        // create count id
-        const counterId = `${booking.clinicId}_${today}`;
- 
-        // Generate queue number
-        const counter = await Counter.findByIdAndUpdate(
-            counterId,
+        // ========================================================
+        // 4. Get Clinic
+        // ========================================================
+
+        const clinic = await Clinic.findById(
+            booking.clinicId
+        );
+
+        if (!clinic) {
+            return res.status(404).json({
+                error: "Clinic not found"
+            });
+        }
+
+        // ========================================================
+        // 5. Check Clinic status
+        // ========================================================
+
+        if (!clinic.isActive) {
+            return res.status(400).json({
+                error: "Clinic is not active"
+            });
+        }
+
+        // ========================================================
+        // 6. Validate daily quota
+        // ========================================================
+
+        if (
+            typeof clinic.dailyQuota !== "number" ||
+            clinic.dailyQuota < 0
+        ) {
+            return res.status(500).json({
+                error: "Invalid clinic daily quota"
+            });
+        }
+
+        // ========================================================
+        // 7. Get today's date
+        // Format: YYYY-MM-DD
+        // ========================================================
+
+        // const today = new Date();
+
+        // today.setHours(0, 0, 0, 0);
+
+        // const dateString =
+        //     today.toISOString().split("T")[0];
+
+        const dateString = getTodayDateString();
+        // ========================================================
+        // 8. Count today's approved/exported bookings
+        // ========================================================
+
+        const usedQuota = await Booking.countDocuments({
+            clinicId: booking.clinicId,
+            bookingDate: dateString,
+            status: {
+                $in: ["approved", "exported"]
+            }
+        });
+
+        // ========================================================
+        // 9. Check if clinic quota is full
+        // ========================================================
+
+        if (usedQuota >= clinic.dailyQuota) {
+            return res.status(400).json({
+                error: "Daily quota has been reached",
+                dailyQuota: clinic.dailyQuota,
+                usedQuota
+            });
+        }
+
+        // ========================================================
+        // 10. Create Counter ID
+        //
+        // Same format used by approveAllBookings()
+        // ========================================================
+        const today = getTodayDateString();
+
+
+        const counterId =
+            `${booking.clinicId.toString()}_${dateString}`;
+
+        // ========================================================
+        // 11. Generate next queue number atomically
+        // ========================================================
+
+        const counter = await Counter.findOneAndUpdate(
             {
-                $inc: { seq: 1 }
+                _id: counterId
             },
             {
-                new: true,
-                upsert: true
+                $inc: {
+                    seq: 1
+                }
+            },
+            {
+                upsert: true,
+                new: true
             }
         );
 
+        if (!counter) {
+            throw new Error(
+                "Failed to generate queue number"
+            );
+        }
 
-        // update the booking status to approved
+        // ========================================================
+        // 12. Safety check
+        //
+        // Counter must never exceed daily quota.
+        // ========================================================
+
+        if (counter.seq > clinic.dailyQuota) {
+
+            // Roll back counter increment
+            await Counter.findOneAndUpdate(
+                {
+                    _id: counterId
+                },
+                {
+                    $inc: {
+                        seq: -1
+                    }
+                }
+            );
+
+            return res.status(400).json({
+                error: "Daily quota has been reached",
+                dailyQuota: clinic.dailyQuota,
+                usedQuota
+            });
+        }
+
+        // ========================================================
+        // 13. Update Booking
+        // ========================================================
+
         booking.queueNumber = counter.seq;
-        booking.bookingDate = today;
+        booking.bookingDate = dateString;
         booking.status = "approved";
 
-        // save the updated booking
+        // ========================================================
+        // 14. Save Booking
+        // ========================================================
+
         await booking.save();
 
-        return res.status(200).json({ message: 'Booking approved successfully', booking });
+        // ========================================================
+        // 15. Response
+        // ========================================================
+
+        return res.status(200).json({
+            success: true,
+            message: "Booking approved successfully",
+
+            booking
+        });
+
     } catch (error) {
-        return res.status(500).json({ error: 'An error occurred while approving the booking', msg: error.message });
+
+        console.error(
+            "Approve Booking Error:",
+            error
+        );
+
+        return res.status(500).json({
+            error:
+                "An error occurred while approving the booking",
+
+            message: error.message
+        });
     }
 }
 
@@ -183,6 +490,9 @@ async function rejectBooking(req, res) {
     try {
         // get booking id
         const bookingId = req.params.id;
+
+        // Get rejection reason from request body
+        const { rejectionReason } = req.body;        
 
         // find the booking by id
         const booking = await Booking.findById(bookingId);
@@ -205,7 +515,12 @@ async function rejectBooking(req, res) {
         // booking.queueNumber = null;
 
         booking.status = "rejected";
+
+        booking.rejectionReason = rejectionReason?.trim() || null; // Default reason if none provided
+       
         booking.rejectedAt = new Date();
+
+        // booking.rejectedBy = req.user?.username || "Unknown"; // Capture the username of the person rejecting the booking
 
 
         // save the updated booking
@@ -213,6 +528,7 @@ async function rejectBooking(req, res) {
 
         return res.status(200).json({ message: 'Booking rejected successfully', booking });
     } catch (error) {
+        console.error("Reject Booking Error:", error);
         return res.status(500).json({ error: 'An error occurred while rejecting the booking', msg: error.message });
     }
 }
@@ -505,6 +821,424 @@ async function getPatientBookings(req, res) {
     }
 }
 
+// function 9 : delete all bookings
+
+async function deleteAllBookings(req, res) {
+    try {
+
+        // Delete all bookings
+        const result = await Booking.deleteMany({});
+
+        // No bookings found
+        if (result.deletedCount === 0) {
+            return res.status(404).json({
+                error: "No bookings found to delete"
+            });
+        }
+
+        return res.status(200).json({
+            message: "All bookings deleted successfully",
+            deletedCount: result.deletedCount
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            error: "An error occurred while deleting all bookings",
+            msg: error.message
+        });
+
+    }
+}
+
+// function 10 : approve all pending bookings
+
+// async function approveAllBookings(req, res) {
+//     try {
+
+//         // Get all pending bookings
+//         const bookings = await Booking.find({
+//             status: "pending"
+//         });
+
+//         // No pending bookings
+//         if (bookings.length === 0) {
+//             return res.status(404).json({
+//                 error: "No pending bookings found"
+//             });
+//         }
+
+//         let approvedCount = 0;
+
+//         // Approve bookings one by one
+//         for (const booking of bookings) {
+
+//             // Get today's date
+//             const today = new Date().toISOString().split("T")[0];
+
+//             // Create unique counter ID for each clinic and day
+//             const counterId = `${booking.clinicId.toString()}_${today}`;
+
+//             // Get next queue number
+//             const counter = await Counter.findOneAndUpdate(
+//                 { _id: counterId },
+//                 { $inc: { seq: 1 } },
+//                 {
+//                     new: true,
+//                     upsert: true
+//                 }
+//             );
+
+//             // Update booking
+//             booking.queueNumber = counter.seq;
+//             booking.bookingDate = today;
+//             booking.status = "approved";
+
+//             await booking.save();
+
+//             approvedCount++;
+//         }
+
+//         return res.status(200).json({
+//             message: "All pending bookings approved successfully",
+//             approvedCount
+//         });
+
+//     } catch (error) {
+
+//         return res.status(500).json({
+//             error: "An error occurred while approving all bookings",
+//             msg: error.message
+//         });
+
+//     }
+// }
+
+
+// ============================================================
+// Function 10 : Approve all pending bookings
+// ============================================================
+
+// ============================================================
+// Function 10 : Approve all pending bookings
+// ============================================================
+
+async function approveAllBookings(req, res) {
+    try {
+
+        // ========================================================
+        // 1. Get all active clinics
+        // ========================================================
+
+        const clinics = await Clinic.find({
+            isActive: true
+        });
+
+        if (clinics.length === 0) {
+            return res.status(404).json({
+                error: "No active clinics found"
+            });
+        }
+
+        // ========================================================
+        // 2. Get today's date
+        // Format: YYYY-MM-DD
+        // ========================================================
+
+        const today = new Date()
+            .toISOString()
+            .split("T")[0];
+
+        // ========================================================
+        // 3. Counters for response
+        // ========================================================
+
+        let approvedCount = 0;
+        let skippedCount = 0;
+
+        // Store information about each clinic
+        const clinicResults = [];
+
+        // ========================================================
+        // 4. Process each clinic separately
+        // ========================================================
+
+        for (const clinic of clinics) {
+
+            // ====================================================
+            // 5. Count bookings that already consumed today's
+            //    quota for this clinic
+            //
+            // approved + exported both consume quota
+            // ====================================================
+
+            const usedQuota = await Booking.countDocuments({
+                clinicId: clinic._id,
+                bookingDate: today,
+                status: {
+                    $in: ["approved", "exported"]
+                }
+            });
+
+            // ====================================================
+            // 6. Calculate remaining quota
+            //
+            // Example:
+            // quota     = 100
+            // usedQuota = 20
+            // available = 80
+            // ====================================================
+
+            const availableQuota = Math.max(
+                clinic.dailyQuota - usedQuota,
+                0
+            );
+
+            // ====================================================
+            // 7. Get pending bookings for this clinic
+            //
+            // Oldest bookings are processed first.
+            // This prevents newer requests from jumping ahead.
+            // ====================================================
+
+            const pendingBookings = await Booking.find({
+                clinicId: clinic._id,
+                status: "pending"
+            }).sort({
+                createdAt: 1
+            });
+
+            // ====================================================
+            // 8. No pending bookings for this clinic
+            // ====================================================
+
+            if (pendingBookings.length === 0) {
+
+                clinicResults.push({
+                    clinicId: clinic._id,
+                    clinicName: clinic.name,
+                    dailyQuota: clinic.dailyQuota,
+                    usedQuota,
+                    availableQuota,
+                    pendingBookings: 0,
+                    approvedBookings: 0,
+                    skippedBookings: 0
+                });
+
+                continue;
+            }
+
+            // ====================================================
+            // 9. Determine how many bookings can be approved
+            //
+            // We NEVER approve more than the remaining quota.
+            // ====================================================
+
+            const bookingsToApprove =
+                pendingBookings.slice(0, availableQuota);
+
+            // Everything after the available quota remains pending.
+            const bookingsToSkip =
+                pendingBookings.slice(availableQuota);
+
+            skippedCount += bookingsToSkip.length;
+
+            // ====================================================
+            // 10. Approve bookings
+            // ====================================================
+
+            let clinicApprovedCount = 0;
+
+            for (const booking of bookingsToApprove) {
+
+                // ==================================================
+                // 11. Create unique Counter ID
+                //
+                // Each clinic has its own counter every day.
+                //
+                // Example:
+                //
+                // Clinic A + 2026-08-10
+                // Clinic B + 2026-08-10
+                //
+                // They have independent counters.
+                // ==================================================
+
+
+
+                // ==================================================
+                // 12. Atomically increment the counter
+                //
+                // $inc is atomic in MongoDB.
+                //
+                // This is important for preventing duplicate
+                // queue numbers when multiple requests are
+                // processed at the same time.
+                // ==================================================
+const today = getTodayDateString();
+
+const counterId =
+    `${booking.clinicId.toString()}_${today}`;
+                const counter = await Counter.findOneAndUpdate(
+                    {
+                        _id: counterId
+                    },
+                    {
+                        $inc: {
+                            seq: 1
+                        }
+                    },
+                    {
+                        new: true,
+                        upsert: true
+                    }
+                );
+
+                // ==================================================
+                // 13. Safety check
+                //
+                // This should normally never happen.
+                // ==================================================
+
+                if (!counter) {
+                    throw new Error(
+                        `Failed to generate queue number for booking ${booking._id}`
+                    );
+                }
+
+                // ==================================================
+                // 14. Update booking
+                // ==================================================
+
+                booking.queueNumber = counter.seq;
+                booking.bookingDate = today;
+                booking.status = "approved";
+
+                // ==================================================
+                // 15. Save booking
+                // ==================================================
+
+                await booking.save();
+
+                clinicApprovedCount++;
+                approvedCount++;
+            }
+
+            // ====================================================
+            // 16. Store clinic result
+            // ====================================================
+
+            clinicResults.push({
+                clinicId: clinic._id,
+                clinicName: clinic.name,
+
+                dailyQuota: clinic.dailyQuota,
+
+                usedQuota,
+
+                availableQuota,
+
+                pendingBookings: pendingBookings.length,
+
+                approvedBookings: clinicApprovedCount,
+
+                skippedBookings: bookingsToSkip.length
+            });
+        }
+
+        // ========================================================
+        // 17. If nothing was approved
+        // ========================================================
+
+        if (approvedCount === 0) {
+
+            return res.status(400).json({
+                error: "No bookings could be approved",
+                approvedCount: 0,
+                skippedCount,
+                clinics: clinicResults
+            });
+        }
+
+        // ========================================================
+        // 18. Success response
+        // ========================================================
+
+        return res.status(200).json({
+
+            message:
+                "Pending bookings processed successfully",
+
+            approvedCount,
+
+            skippedCount,
+
+            bookingDate: today,
+
+            clinics: clinicResults
+        });
+
+    } catch (error) {
+
+        // ========================================================
+        // Error handling
+        // ========================================================
+
+        console.error(
+            "Error in approveAllBookings:",
+            error
+        );
+
+        return res.status(500).json({
+            error:
+                "An error occurred while approving all bookings",
+
+            msg: error.message
+        });
+    }
+}
+            
+// function 11 : reject all pending bookings
+
+async function rejectAllBookings(req, res) {
+    try {
+
+        // Reject all pending bookings
+        const result = await Booking.updateMany(
+            {
+                status: "pending"
+            },
+            {
+                $set: {
+                    status: "rejected",
+                    rejectedAt: new Date()
+                }
+            }
+        );
+
+        // No pending bookings
+        if (result.modifiedCount === 0) {
+            return res.status(404).json({
+                error: "No pending bookings found"
+            });
+        }
+
+        return res.status(200).json({
+            message: "All pending bookings rejected successfully",
+            rejectedCount: result.modifiedCount
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            error: "An error occurred while rejecting all bookings",
+            msg: error.message
+        });
+
+    }
+}
+
+
 module.exports = {
     createBooking,
     getAllBookings,
@@ -513,6 +1247,9 @@ module.exports = {
     exportBookings,
     exportAllBookings,
     deleteBooking,
-    getPatientBookings
+    getPatientBookings,
+    deleteAllBookings,
+    approveAllBookings,
+    rejectAllBookings
 };
 

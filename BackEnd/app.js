@@ -30,7 +30,7 @@ app.use("/api/clinics", clinicRoutes);
 // Connect to MongoDB
 async function DBconnection(){
     try{
-        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/patientRequest');
+        await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/NCI-AMS');
         console.log('Connected to DB');
     } catch (error) {
         console.error('Error connecting to DB:', error.message);

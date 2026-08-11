@@ -13,6 +13,9 @@ function authMiddleware(req, res, next) {
     // split the token from the "Bearer" prefix
     const token = authHeader.split(' ')[1];
 
+        console.log("AUTH HEADER:", authHeader);
+        console.log("TOKEN RECEIVED:", token);
+
     if (!token) {
         console.log('Invalid token format');
         return res.status(401).json({ error: "invalid token format" });
@@ -25,7 +28,10 @@ function authMiddleware(req, res, next) {
         next();             
     } catch (error) {
         console.log('Token verification failed');
-        return res.status(401).json({ error: "token verification failed" });
+        console.log("JWT ERROR:", error.message);
+
+        console.error(error.message);
+        return res.status(401).json({ error: "token verification failed" , msg : error.message });
     }
 }
 

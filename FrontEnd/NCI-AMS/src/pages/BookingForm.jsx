@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import logo from "./assets/mciLogo.png";
+import logo from "../assets/mciLogo.png";
 import CheckStatus from "./CheckStatus";
 import Swal from "sweetalert2";
-import { createBooking, getClinics } from "./api/bookingApi";
+import { createBooking, getClinics } from "../api/bookingApi";
 
 const BookingForm = () => {
   // =========================
