@@ -275,7 +275,517 @@ async function getAllBookings(req, res) {
 // Function : Approve a single booking
 // ============================================================
 
+// async function approveBooking(req, res) {
+//     try {
+
+//         // ========================================================
+//         // 1. Get Booking ID
+//         // ========================================================
+
+//         const bookingId = req.params.id;
+
+//         // ========================================================
+//         // 2. Find Booking
+//         // ========================================================
+
+//         const booking = await Booking.findById(bookingId);
+
+//         if (!booking) {
+//             return res.status(404).json({
+//                 error: "Booking not found"
+//             });
+//         }
+
+//         // ========================================================
+//         // 3. Only pending bookings can be approved
+//         // ========================================================
+
+//         if (booking.status !== "pending") {
+//             return res.status(400).json({
+//                 error: "Only pending bookings can be approved"
+//             });
+//         }
+
+//         // ========================================================
+//         // 4. Get Clinic
+//         // ========================================================
+
+//         const clinic = await Clinic.findById(
+//             booking.clinicId
+//         );
+
+//         if (!clinic) {
+//             return res.status(404).json({
+//                 error: "Clinic not found"
+//             });
+//         }
+
+//         // ========================================================
+//         // 5. Check Clinic status
+//         // ========================================================
+
+//         if (!clinic.isActive) {
+//             return res.status(400).json({
+//                 error: "Clinic is not active"
+//             });
+//         }
+
+//         // ========================================================
+//         // 6. Validate daily quota
+//         // ========================================================
+
+//         if (
+//             typeof clinic.dailyQuota !== "number" ||
+//             clinic.dailyQuota < 0
+//         ) {
+//             return res.status(500).json({
+//                 error: "Invalid clinic daily quota"
+//             });
+//         }
+
+//         // ========================================================
+//         // 7. Get today's date
+//         // Format: YYYY-MM-DD
+//         // ========================================================
+
+//         // const today = new Date();
+
+//         // today.setHours(0, 0, 0, 0);
+
+//         // const dateString =
+//         //     today.toISOString().split("T")[0];
+
+//         const dateString = getTodayDateString();
+//         // ========================================================
+//         // 8. Count today's approved/exported bookings
+//         // ========================================================
+
+//         const usedQuota = await Booking.countDocuments({
+//             clinicId: booking.clinicId,
+//             bookingDate: dateString,
+//             status: {
+//                 $in: ["approved", "exported"]
+//             }
+//         });
+
+//         // ========================================================
+//         // 9. Check if clinic quota is full
+//         // ========================================================
+
+//         if (usedQuota >= clinic.dailyQuota) {
+//             return res.status(400).json({
+//                 error: "Daily quota has been reached",
+//                 dailyQuota: clinic.dailyQuota,
+//                 usedQuota
+//             });
+//         }
+
+//         // ========================================================
+//         // 10. Create Counter ID
+//         //
+//         // Same format used by approveAllBookings()
+//         // ========================================================
+//         const today = getTodayDateString();
+
+
+//         const counterId =
+//             `${booking.clinicId.toString()}_${dateString}`;
+
+//         // ========================================================
+//         // 11. Generate next queue number atomically
+//         // ========================================================
+
+//         const counter = await Counter.findOneAndUpdate(
+//             {
+//                 _id: counterId
+//             },
+//             {
+//                 $inc: {
+//                     seq: 1
+//                 }
+//             },
+//             {
+//                 upsert: true,
+//                 new: true
+//             }
+//         );
+
+//         if (!counter) {
+//             throw new Error(
+//                 "Failed to generate queue number"
+//             );
+//         }
+
+//         // ========================================================
+//         // 12. Safety check
+//         //
+//         // Counter must never exceed daily quota.
+//         // ========================================================
+
+//         if (counter.seq > clinic.dailyQuota) {
+
+//             // Roll back counter increment
+//             await Counter.findOneAndUpdate(
+//                 {
+//                     _id: counterId
+//                 },
+//                 {
+//                     $inc: {
+//                         seq: -1
+//                     }
+//                 }
+//             );
+
+//             return res.status(400).json({
+//                 error: "Daily quota has been reached",
+//                 dailyQuota: clinic.dailyQuota,
+//                 usedQuota
+//             });
+//         }
+
+//         // ========================================================
+//         // 13. Update Booking
+//         // ========================================================
+
+//         booking.queueNumber = counter.seq;
+//         booking.bookingDate = dateString;
+//         booking.status = "approved";
+
+//         // ========================================================
+//         // 14. Save Booking
+//         // ========================================================
+
+//         await booking.save();
+
+//         // ========================================================
+//         // 15. Response
+//         // ========================================================
+
+//         return res.status(200).json({
+//             success: true,
+//             message: "Booking approved successfully",
+
+//             booking
+//         });
+
+//     } catch (error) {
+
+//         console.error(
+//             "Approve Booking Error:",
+//             error
+//         );
+
+//         return res.status(500).json({
+//             error:
+//                 "An error occurred while approving the booking",
+
+//             message: error.message
+//         });
+//     }
+// }
+
+// async function approveBooking(req, res) {
+//     try {
+
+//         // ========================================================
+//         // 1. Get Booking ID
+//         // ========================================================
+
+//         const bookingId = req.params.id;
+
+//         // ========================================================
+//         // 2. Find Booking
+//         // ========================================================
+
+//         const booking = await Booking.findById(bookingId);
+
+//         if (!booking) {
+//             return res.status(404).json({
+//                 error: "Booking not found"
+//             });
+//         }
+
+//         // ========================================================
+//         // 3. Only pending bookings can be approved
+//         // ========================================================
+
+//         if (booking.status !== "pending") {
+//             return res.status(400).json({
+//                 error: "Only pending bookings can be approved"
+//             });
+//         }
+
+//         // ========================================================
+//         // 4. Get Clinic
+//         // ========================================================
+
+//         const clinic = await Clinic.findById(
+//             booking.clinicId
+//         );
+
+//         if (!clinic) {
+//             return res.status(404).json({
+//                 error: "Clinic not found"
+//             });
+//         }
+
+//         // ========================================================
+//         // 5. Check Clinic status
+//         // ========================================================
+
+//         if (!clinic.isActive) {
+//             return res.status(400).json({
+//                 error: "Clinic is not active"
+//             });
+//         }
+
+//         // ========================================================
+//         // 6. Validate daily quota
+//         // ========================================================
+
+//         if (
+//             typeof clinic.dailyQuota !== "number" ||
+//             clinic.dailyQuota < 1
+//         ) {
+//             return res.status(500).json({
+//                 error: "Invalid clinic daily quota"
+//             });
+//         }
+
+//         // ========================================================
+//         // 7. Validate used quota
+//         // ========================================================
+
+//         if (
+//             typeof clinic.usedQuota !== "number" ||
+//             clinic.usedQuota < 0
+//         ) {
+//             return res.status(500).json({
+//                 error: "Invalid clinic used quota"
+//             });
+//         }
+
+//         // ========================================================
+//         // 8. Get today's date
+//         // ========================================================
+
+//         const dateString = getTodayDateString();
+
+//         // ========================================================
+//         // 9. Atomically reserve one quota slot
+//         //
+//         // IMPORTANT:
+//         // usedQuota is incremented ONLY if:
+//         //
+//         // usedQuota < dailyQuota
+//         //
+//         // This prevents concurrent approvals from exceeding
+//         // the clinic quota.
+//         // ========================================================
+
+//         const updatedClinic = await Clinic.findOneAndUpdate(
+//             {
+//                 _id: booking.clinicId,
+//                 isActive: true,
+//                 $expr: {
+//                     $lt: ["$usedQuota", "$dailyQuota"]
+//                 }
+//             },
+//             {
+//                 $inc: {
+//                     usedQuota: 1
+//                 }
+//             },
+//             {
+//                 new: true
+//             }
+//         );
+
+//         // ========================================================
+//         // 10. Quota could not be reserved
+//         // ========================================================
+
+//         if (!updatedClinic) {
+
+//             const currentClinic = await Clinic.findById(
+//                 booking.clinicId
+//             ).select("dailyQuota usedQuota isActive");
+
+//             if (!currentClinic) {
+//                 return res.status(404).json({
+//                     error: "Clinic not found"
+//                 });
+//             }
+
+//             if (!currentClinic.isActive) {
+//                 return res.status(400).json({
+//                     error: "Clinic is not active"
+//                 });
+//             }
+
+//             return res.status(400).json({
+//                 error: "Daily quota has been reached",
+//                 dailyQuota: currentClinic.dailyQuota,
+//                 usedQuota: currentClinic.usedQuota,
+//                 remainingQuota: Math.max(
+//                     currentClinic.dailyQuota -
+//                     currentClinic.usedQuota,
+//                     0
+//                 )
+//             });
+//         }
+
+//         // ========================================================
+//         // From this point:
+//         //
+//         // One quota slot has been reserved.
+//         //
+//         // If anything fails after this point, we MUST rollback
+//         // usedQuota.
+//         // ========================================================
+
+//         let quotaReserved = true;
+
+//         try {
+
+//             // ====================================================
+//             // 11. Create Counter ID
+//             // ====================================================
+
+//             const counterId =
+//                 `${booking.clinicId.toString()}_${dateString}`;
+
+//             // ====================================================
+//             // 12. Generate next queue number atomically
+//             // ====================================================
+
+//             const counter = await Counter.findOneAndUpdate(
+//                 {
+//                     _id: counterId
+//                 },
+//                 {
+//                     $inc: {
+//                         seq: 1
+//                     }
+//                 },
+//                 {
+//                     upsert: true,
+//                     new: true
+//                 }
+//             );
+
+//             if (!counter) {
+//                 throw new Error(
+//                     "Failed to generate queue number"
+//                 );
+//             }
+
+//             // ====================================================
+//             // 13. Safety check
+//             //
+//             // Because quota was reserved atomically,
+//             // counter should never exceed dailyQuota.
+//             // ====================================================
+
+//             if (counter.seq > updatedClinic.dailyQuota) {
+
+//                 // Rollback counter
+//                 await Counter.findOneAndUpdate(
+//                     {
+//                         _id: counterId
+//                     },
+//                     {
+//                         $inc: {
+//                             seq: -1
+//                         }
+//                     }
+//                 );
+
+//                 throw new Error(
+//                     "Queue number exceeded daily quota"
+//                 );
+//             }
+
+//             // ====================================================
+//             // 14. Update Booking
+//             // ====================================================
+
+//             booking.queueNumber = counter.seq;
+//             booking.bookingDate = dateString;
+//             booking.status = "approved";
+
+//             // ====================================================
+//             // 15. Save Booking
+//             // ====================================================
+
+//             await booking.save();
+
+//             quotaReserved = false;
+
+//             // ====================================================
+//             // 16. Response
+//             // ====================================================
+
+//             return res.status(200).json({
+//                 success: true,
+//                 message: "Booking approved successfully",
+
+//                 booking,
+
+//                 quota: {
+//                     dailyQuota: updatedClinic.dailyQuota,
+//                     usedQuota: updatedClinic.usedQuota,
+//                     remainingQuota:
+//                         Math.max(
+//                             updatedClinic.dailyQuota -
+//                             updatedClinic.usedQuota,
+//                             0
+//                         )
+//                 }
+//             });
+
+//         } catch (error) {
+
+//             // ====================================================
+//             // 17. Rollback quota
+//             //
+//             // Booking was NOT successfully approved.
+//             // Therefore the reserved quota must be returned.
+//             // ====================================================
+
+//             if (quotaReserved) {
+
+//                 await Clinic.findByIdAndUpdate(
+//                     booking.clinicId,
+//                     {
+//                         $inc: {
+//                             usedQuota: -1
+//                         }
+//                     }
+//                 );
+//             }
+
+//             throw error;
+//         }
+
+//     } catch (error) {
+
+//         console.error(
+//             "Approve Booking Error:",
+//             error
+//         );
+
+//         return res.status(500).json({
+//             error:
+//                 "An error occurred while approving the booking",
+
+//             message: error.message
+//         });
+//     }
+// }
+
 async function approveBooking(req, res) {
+
     try {
 
         // ========================================================
@@ -284,6 +794,7 @@ async function approveBooking(req, res) {
 
         const bookingId = req.params.id;
 
+
         // ========================================================
         // 2. Find Booking
         // ========================================================
@@ -291,20 +802,26 @@ async function approveBooking(req, res) {
         const booking = await Booking.findById(bookingId);
 
         if (!booking) {
+
             return res.status(404).json({
                 error: "Booking not found"
             });
+
         }
+
 
         // ========================================================
         // 3. Only pending bookings can be approved
         // ========================================================
 
         if (booking.status !== "pending") {
+
             return res.status(400).json({
                 error: "Only pending bookings can be approved"
             });
+
         }
+
 
         // ========================================================
         // 4. Get Clinic
@@ -315,158 +832,374 @@ async function approveBooking(req, res) {
         );
 
         if (!clinic) {
+
             return res.status(404).json({
                 error: "Clinic not found"
             });
+
         }
+
 
         // ========================================================
         // 5. Check Clinic status
         // ========================================================
 
         if (!clinic.isActive) {
+
             return res.status(400).json({
                 error: "Clinic is not active"
             });
+
         }
 
+
         // ========================================================
-        // 6. Validate daily quota
+        // 6. Validate clinic default quota
         // ========================================================
 
         if (
             typeof clinic.dailyQuota !== "number" ||
-            clinic.dailyQuota < 0
+            clinic.dailyQuota < 1
         ) {
+
             return res.status(500).json({
                 error: "Invalid clinic daily quota"
             });
+
         }
+
 
         // ========================================================
         // 7. Get today's date
-        // Format: YYYY-MM-DD
         // ========================================================
-
-        // const today = new Date();
-
-        // today.setHours(0, 0, 0, 0);
-
-        // const dateString =
-        //     today.toISOString().split("T")[0];
 
         const dateString = getTodayDateString();
-        // ========================================================
-        // 8. Count today's approved/exported bookings
-        // ========================================================
 
-        const usedQuota = await Booking.countDocuments({
-            clinicId: booking.clinicId,
-            bookingDate: dateString,
-            status: {
-                $in: ["approved", "exported"]
-            }
-        });
 
         // ========================================================
-        // 9. Check if clinic quota is full
+        // 8. Get or create today's quota record
         // ========================================================
 
-        if (usedQuota >= clinic.dailyQuota) {
-            return res.status(400).json({
-                error: "Daily quota has been reached",
-                dailyQuota: clinic.dailyQuota,
-                usedQuota
+        let dailyQuota =
+            await DailyClinicQuota.findOne({
+                clinicId: booking.clinicId,
+                date: dateString
             });
-        }
-
-        // ========================================================
-        // 10. Create Counter ID
-        //
-        // Same format used by approveAllBookings()
-        // ========================================================
-        const today = getTodayDateString();
 
 
-        const counterId =
-            `${booking.clinicId.toString()}_${dateString}`;
+        if (!dailyQuota) {
 
-        // ========================================================
-        // 11. Generate next queue number atomically
-        // ========================================================
+            try {
 
-        const counter = await Counter.findOneAndUpdate(
-            {
-                _id: counterId
-            },
-            {
-                $inc: {
-                    seq: 1
+                dailyQuota =
+                    await DailyClinicQuota.create({
+
+                        clinicId: booking.clinicId,
+
+                        date: dateString,
+
+                        quota: clinic.dailyQuota,
+
+                        usedQuota: 0
+
+                    });
+
+            } catch (error) {
+
+                // Another concurrent request may have
+                // created the record at the same time.
+
+                if (error.code === 11000) {
+
+                    dailyQuota =
+                        await DailyClinicQuota.findOne({
+                            clinicId: booking.clinicId,
+                            date: dateString
+                        });
+
+                } else {
+
+                    throw error;
+
                 }
-            },
-            {
-                upsert: true,
-                new: true
             }
-        );
-
-        if (!counter) {
-            throw new Error(
-                "Failed to generate queue number"
-            );
         }
 
+
+        if (!dailyQuota) {
+
+            throw new Error(
+                "Failed to create daily clinic quota"
+            );
+
+        }
+
+
         // ========================================================
-        // 12. Safety check
+        // 9. Atomically reserve ONE quota slot
         //
-        // Counter must never exceed daily quota.
+        // IMPORTANT:
+        //
+        // The increment happens ONLY when:
+        //
+        // usedQuota < quota
+        //
+        // This protects against concurrent approvals.
         // ========================================================
 
-        if (counter.seq > clinic.dailyQuota) {
+        const updatedQuota =
+            await DailyClinicQuota.findOneAndUpdate(
 
-            // Roll back counter increment
-            await Counter.findOneAndUpdate(
                 {
-                    _id: counterId
+                    _id: dailyQuota._id,
+
+                    $expr: {
+                        $lt: [
+                            "$usedQuota",
+                            "$quota"
+                        ]
+                    }
                 },
+
                 {
                     $inc: {
-                        seq: -1
+                        usedQuota: 1
                     }
+                },
+
+                {
+                    new: true
                 }
             );
 
+
+        // ========================================================
+        // 10. Quota could not be reserved
+        // ========================================================
+
+        if (!updatedQuota) {
+
+            const currentQuota =
+                await DailyClinicQuota.findById(
+                    dailyQuota._id
+                );
+
+
+            if (!currentQuota) {
+
+                return res.status(500).json({
+                    error:
+                        "Daily quota record not found"
+                });
+
+            }
+
+
             return res.status(400).json({
-                error: "Daily quota has been reached",
-                dailyQuota: clinic.dailyQuota,
-                usedQuota
+
+                error:
+                    "Daily quota has been reached",
+
+                dailyQuota:
+                    currentQuota.quota,
+
+                usedQuota:
+                    currentQuota.usedQuota,
+
+                remainingQuota:
+                    Math.max(
+                        currentQuota.quota -
+                        currentQuota.usedQuota,
+                        0
+                    )
+
             });
+
         }
 
-        // ========================================================
-        // 13. Update Booking
-        // ========================================================
-
-        booking.queueNumber = counter.seq;
-        booking.bookingDate = dateString;
-        booking.status = "approved";
 
         // ========================================================
-        // 14. Save Booking
+        // From this point:
+        //
+        // ONE quota slot has been reserved.
+        //
+        // If anything fails, rollback usedQuota.
         // ========================================================
 
-        await booking.save();
+        let quotaReserved = true;
 
-        // ========================================================
-        // 15. Response
-        // ========================================================
 
-        return res.status(200).json({
-            success: true,
-            message: "Booking approved successfully",
+        try {
 
-            booking
-        });
+            // ====================================================
+            // 11. Counter ID
+            // ====================================================
+
+            const counterId =
+                `${booking.clinicId.toString()}_${dateString}`;
+
+
+            // ====================================================
+            // 12. Generate queue number atomically
+            // ====================================================
+
+            const counter =
+                await Counter.findOneAndUpdate(
+
+                    {
+                        _id: counterId
+                    },
+
+                    {
+                        $inc: {
+                            seq: 1
+                        }
+                    },
+
+                    {
+                        upsert: true,
+                        new: true
+                    }
+                );
+
+
+            if (!counter) {
+
+                throw new Error(
+                    "Failed to generate queue number"
+                );
+
+            }
+
+
+            // ====================================================
+            // 13. Queue safety check
+            // ====================================================
+
+            if (
+                counter.seq >
+                updatedQuota.quota
+            ) {
+
+                // Rollback counter increment
+
+                await Counter.findOneAndUpdate(
+
+                    {
+                        _id: counterId,
+
+                        seq: {
+                            $gte: counter.seq
+                        }
+                    },
+
+                    {
+                        $inc: {
+                            seq: -1
+                        }
+                    }
+                );
+
+
+                throw new Error(
+                    "Queue number exceeded daily quota"
+                );
+
+            }
+
+
+            // ====================================================
+            // 14. Update booking
+            // ====================================================
+
+            booking.queueNumber =
+                counter.seq;
+
+            booking.bookingDate =
+                dateString;
+
+            booking.status =
+                "approved";
+
+
+            // ====================================================
+            // 15. Save booking
+            // ====================================================
+
+            await booking.save();
+
+
+            // ====================================================
+            // 16. Quota is now permanently consumed
+            // ====================================================
+
+            quotaReserved = false;
+
+
+            // ====================================================
+            // 17. Response
+            // ====================================================
+
+            return res.status(200).json({
+
+                success: true,
+
+                message:
+                    "Booking approved successfully",
+
+                booking,
+
+                quota: {
+
+                    dailyQuota:
+                        updatedQuota.quota,
+
+                    usedQuota:
+                        updatedQuota.usedQuota,
+
+                    remainingQuota:
+                        Math.max(
+                            updatedQuota.quota -
+                            updatedQuota.usedQuota,
+                            0
+                        )
+
+                }
+
+            });
+
+
+        } catch (error) {
+
+            // ====================================================
+            // 18. Rollback reserved quota
+            // ====================================================
+
+            if (quotaReserved) {
+
+                await DailyClinicQuota.findOneAndUpdate(
+
+                    {
+                        _id: dailyQuota._id,
+
+                        usedQuota: {
+                            $gt: 0
+                        }
+                    },
+
+                    {
+                        $inc: {
+                            usedQuota: -1
+                        }
+                    }
+                );
+
+            }
+
+
+            throw error;
+
+        }
 
     } catch (error) {
 
@@ -475,14 +1208,20 @@ async function approveBooking(req, res) {
             error
         );
 
+
         return res.status(500).json({
+
             error:
                 "An error occurred while approving the booking",
 
-            message: error.message
+            message:
+                error.message
+
         });
+
     }
 }
+
 
 // function 4 : reject a booking
 
@@ -923,11 +1662,293 @@ async function deleteAllBookings(req, res) {
 // Function 10 : Approve all pending bookings
 // ============================================================
 
+// async function approveAllBookings(req, res) {
+//     try {
+
+//         // ========================================================
+//         // 1. Get all active clinics
+//         // ========================================================
+
+//         const clinics = await Clinic.find({
+//             isActive: true
+//         });
+
+//         if (clinics.length === 0) {
+//             return res.status(404).json({
+//                 error: "No active clinics found"
+//             });
+//         }
+
+//         // ========================================================
+//         // 2. Get today's date
+//         // Format: YYYY-MM-DD
+//         // ========================================================
+
+//         const today = new Date()
+//             .toISOString()
+//             .split("T")[0];
+
+//         // ========================================================
+//         // 3. Counters for response
+//         // ========================================================
+
+//         let approvedCount = 0;
+//         let skippedCount = 0;
+
+//         // Store information about each clinic
+//         const clinicResults = [];
+
+//         // ========================================================
+//         // 4. Process each clinic separately
+//         // ========================================================
+
+//         for (const clinic of clinics) {
+
+//             // ====================================================
+//             // 5. Count bookings that already consumed today's
+//             //    quota for this clinic
+//             //
+//             // approved + exported both consume quota
+//             // ====================================================
+
+//             const usedQuota = await Booking.countDocuments({
+//                 clinicId: clinic._id,
+//                 bookingDate: today,
+//                 status: {
+//                     $in: ["approved", "exported"]
+//                 }
+//             });
+
+//             // ====================================================
+//             // 6. Calculate remaining quota
+//             //
+//             // Example:
+//             // quota     = 100
+//             // usedQuota = 20
+//             // available = 80
+//             // ====================================================
+
+//             const availableQuota = Math.max(
+//                 clinic.dailyQuota - usedQuota,
+//                 0
+//             );
+
+//             // ====================================================
+//             // 7. Get pending bookings for this clinic
+//             //
+//             // Oldest bookings are processed first.
+//             // This prevents newer requests from jumping ahead.
+//             // ====================================================
+
+//             const pendingBookings = await Booking.find({
+//                 clinicId: clinic._id,
+//                 status: "pending"
+//             }).sort({
+//                 createdAt: 1
+//             });
+
+//             // ====================================================
+//             // 8. No pending bookings for this clinic
+//             // ====================================================
+
+//             if (pendingBookings.length === 0) {
+
+//                 clinicResults.push({
+//                     clinicId: clinic._id,
+//                     clinicName: clinic.name,
+//                     dailyQuota: clinic.dailyQuota,
+//                     usedQuota,
+//                     availableQuota,
+//                     pendingBookings: 0,
+//                     approvedBookings: 0,
+//                     skippedBookings: 0
+//                 });
+
+//                 continue;
+//             }
+
+//             // ====================================================
+//             // 9. Determine how many bookings can be approved
+//             //
+//             // We NEVER approve more than the remaining quota.
+//             // ====================================================
+
+//             const bookingsToApprove =
+//                 pendingBookings.slice(0, availableQuota);
+
+//             // Everything after the available quota remains pending.
+//             const bookingsToSkip =
+//                 pendingBookings.slice(availableQuota);
+
+//             skippedCount += bookingsToSkip.length;
+
+//             // ====================================================
+//             // 10. Approve bookings
+//             // ====================================================
+
+//             let clinicApprovedCount = 0;
+
+//             for (const booking of bookingsToApprove) {
+
+//                 // ==================================================
+//                 // 11. Create unique Counter ID
+//                 //
+//                 // Each clinic has its own counter every day.
+//                 //
+//                 // Example:
+//                 //
+//                 // Clinic A + 2026-08-10
+//                 // Clinic B + 2026-08-10
+//                 //
+//                 // They have independent counters.
+//                 // ==================================================
+
+
+
+//                 // ==================================================
+//                 // 12. Atomically increment the counter
+//                 //
+//                 // $inc is atomic in MongoDB.
+//                 //
+//                 // This is important for preventing duplicate
+//                 // queue numbers when multiple requests are
+//                 // processed at the same time.
+//                 // ==================================================
+// const today = getTodayDateString();
+
+// const counterId =
+//     `${booking.clinicId.toString()}_${today}`;
+//                 const counter = await Counter.findOneAndUpdate(
+//                     {
+//                         _id: counterId
+//                     },
+//                     {
+//                         $inc: {
+//                             seq: 1
+//                         }
+//                     },
+//                     {
+//                         new: true,
+//                         upsert: true
+//                     }
+//                 );
+
+//                 // ==================================================
+//                 // 13. Safety check
+//                 //
+//                 // This should normally never happen.
+//                 // ==================================================
+
+//                 if (!counter) {
+//                     throw new Error(
+//                         `Failed to generate queue number for booking ${booking._id}`
+//                     );
+//                 }
+
+//                 // ==================================================
+//                 // 14. Update booking
+//                 // ==================================================
+
+//                 booking.queueNumber = counter.seq;
+//                 booking.bookingDate = today;
+//                 booking.status = "approved";
+
+//                 // ==================================================
+//                 // 15. Save booking
+//                 // ==================================================
+
+//                 await booking.save();
+
+//                 clinicApprovedCount++;
+//                 approvedCount++;
+//             }
+
+//             // ====================================================
+//             // 16. Store clinic result
+//             // ====================================================
+
+//             clinicResults.push({
+//                 clinicId: clinic._id,
+//                 clinicName: clinic.name,
+
+//                 dailyQuota: clinic.dailyQuota,
+
+//                 usedQuota,
+
+//                 availableQuota,
+
+//                 pendingBookings: pendingBookings.length,
+
+//                 approvedBookings: clinicApprovedCount,
+
+//                 skippedBookings: bookingsToSkip.length
+//             });
+//         }
+
+//         // ========================================================
+//         // 17. If nothing was approved
+//         // ========================================================
+
+//         if (approvedCount === 0) {
+
+//             return res.status(400).json({
+//                 error: "No bookings could be approved",
+//                 approvedCount: 0,
+//                 skippedCount,
+//                 clinics: clinicResults
+//             });
+//         }
+
+//         // ========================================================
+//         // 18. Success response
+//         // ========================================================
+
+//         return res.status(200).json({
+
+//             message:
+//                 "Pending bookings processed successfully",
+
+//             approvedCount,
+
+//             skippedCount,
+
+//             bookingDate: today,
+
+//             clinics: clinicResults
+//         });
+
+//     } catch (error) {
+
+//         // ========================================================
+//         // Error handling
+//         // ========================================================
+
+//         console.error(
+//             "Error in approveAllBookings:",
+//             error
+//         );
+
+//         return res.status(500).json({
+//             error:
+//                 "An error occurred while approving all bookings",
+
+//             msg: error.message
+//         });
+//     }
+// }
+
 async function approveAllBookings(req, res) {
     try {
 
         // ========================================================
-        // 1. Get all active clinics
+        // 1. Get today's date
+        // ========================================================
+
+        const today = getTodayDateString();
+
+
+        // ========================================================
+        // 2. Get all active clinics
         // ========================================================
 
         const clinics = await Clinic.find({
@@ -940,231 +1961,563 @@ async function approveAllBookings(req, res) {
             });
         }
 
-        // ========================================================
-        // 2. Get today's date
-        // Format: YYYY-MM-DD
-        // ========================================================
-
-        const today = new Date()
-            .toISOString()
-            .split("T")[0];
 
         // ========================================================
-        // 3. Counters for response
+        // 3. Response counters
         // ========================================================
 
         let approvedCount = 0;
         let skippedCount = 0;
 
-        // Store information about each clinic
         const clinicResults = [];
 
+
         // ========================================================
-        // 4. Process each clinic separately
+        // 4. Process each clinic
         // ========================================================
 
         for (const clinic of clinics) {
 
             // ====================================================
-            // 5. Count bookings that already consumed today's
-            //    quota for this clinic
-            //
-            // approved + exported both consume quota
+            // 5. Get today's DailyClinicQuota
             // ====================================================
 
-            const usedQuota = await Booking.countDocuments({
-                clinicId: clinic._id,
-                bookingDate: today,
-                status: {
-                    $in: ["approved", "exported"]
+            let dailyQuotaRecord =
+                await DailyClinicQuota.findOne({
+                    clinicId: clinic._id,
+                    date: today
+                });
+
+
+            // ====================================================
+            // 6. Create today's quota record if it doesn't exist
+            // ====================================================
+
+            if (!dailyQuotaRecord) {
+
+                try {
+
+                    dailyQuotaRecord =
+                        await DailyClinicQuota.create({
+
+                            clinicId: clinic._id,
+
+                            date: today,
+
+                            quota: clinic.dailyQuota,
+
+                            usedQuota: 0
+
+                        });
+
+                } catch (error) {
+
+                    // Another request may have created it
+                    // concurrently.
+
+                    if (error.code === 11000) {
+
+                        dailyQuotaRecord =
+                            await DailyClinicQuota.findOne({
+                                clinicId: clinic._id,
+                                date: today
+                            });
+
+                    } else {
+
+                        throw error;
+
+                    }
                 }
-            });
+            }
+
+
+            if (!dailyQuotaRecord) {
+
+                throw new Error(
+                    `Failed to create daily quota for clinic ${clinic._id}`
+                );
+
+            }
+
 
             // ====================================================
-            // 6. Calculate remaining quota
+            // 7. Get pending bookings
             //
-            // Example:
-            // quota     = 100
-            // usedQuota = 20
-            // available = 80
+            // Oldest first
             // ====================================================
 
-            const availableQuota = Math.max(
-                clinic.dailyQuota - usedQuota,
-                0
-            );
+            const pendingBookings =
+                await Booking.find({
+
+                    clinicId: clinic._id,
+
+                    status: "pending"
+
+                }).sort({
+                    createdAt: 1
+                });
+
 
             // ====================================================
-            // 7. Get pending bookings for this clinic
-            //
-            // Oldest bookings are processed first.
-            // This prevents newer requests from jumping ahead.
-            // ====================================================
-
-            const pendingBookings = await Booking.find({
-                clinicId: clinic._id,
-                status: "pending"
-            }).sort({
-                createdAt: 1
-            });
-
-            // ====================================================
-            // 8. No pending bookings for this clinic
+            // 8. No pending bookings
             // ====================================================
 
             if (pendingBookings.length === 0) {
 
+                const remainingQuota =
+                    Math.max(
+                        dailyQuotaRecord.quota -
+                        dailyQuotaRecord.usedQuota,
+                        0
+                    );
+
+
                 clinicResults.push({
+
                     clinicId: clinic._id,
+
                     clinicName: clinic.name,
-                    dailyQuota: clinic.dailyQuota,
-                    usedQuota,
-                    availableQuota,
+
+                    dailyQuota:
+                        dailyQuotaRecord.quota,
+
+                    usedQuota:
+                        dailyQuotaRecord.usedQuota,
+
+                    remainingQuota,
+
                     pendingBookings: 0,
+
                     approvedBookings: 0,
+
                     skippedBookings: 0
+
                 });
 
                 continue;
             }
 
+
             // ====================================================
-            // 9. Determine how many bookings can be approved
-            //
-            // We NEVER approve more than the remaining quota.
+            // 9. Calculate remaining quota
+            // ====================================================
+
+            const remainingQuota =
+                Math.max(
+                    dailyQuotaRecord.quota -
+                    dailyQuotaRecord.usedQuota,
+                    0
+                );
+
+
+            // ====================================================
+            // 10. No quota available
+            // ====================================================
+
+            if (remainingQuota === 0) {
+
+                skippedCount +=
+                    pendingBookings.length;
+
+
+                clinicResults.push({
+
+                    clinicId: clinic._id,
+
+                    clinicName: clinic.name,
+
+                    dailyQuota:
+                        dailyQuotaRecord.quota,
+
+                    usedQuota:
+                        dailyQuotaRecord.usedQuota,
+
+                    remainingQuota: 0,
+
+                    pendingBookings:
+                        pendingBookings.length,
+
+                    approvedBookings: 0,
+
+                    skippedBookings:
+                        pendingBookings.length
+
+                });
+
+                continue;
+            }
+
+
+            // ====================================================
+            // 11. Determine how many bookings we TRY to approve
             // ====================================================
 
             const bookingsToApprove =
-                pendingBookings.slice(0, availableQuota);
+                pendingBookings.slice(
+                    0,
+                    remainingQuota
+                );
 
-            // Everything after the available quota remains pending.
+
             const bookingsToSkip =
-                pendingBookings.slice(availableQuota);
+                pendingBookings.slice(
+                    remainingQuota
+                );
 
-            skippedCount += bookingsToSkip.length;
+
+            skippedCount +=
+                bookingsToSkip.length;
+
 
             // ====================================================
-            // 10. Approve bookings
+            // 12. Approve bookings one by one
             // ====================================================
 
             let clinicApprovedCount = 0;
 
+
             for (const booking of bookingsToApprove) {
 
                 // ==================================================
-                // 11. Create unique Counter ID
+                // 13. Atomically reserve quota
                 //
-                // Each clinic has its own counter every day.
+                // This is VERY important.
                 //
-                // Example:
-                //
-                // Clinic A + 2026-08-10
-                // Clinic B + 2026-08-10
-                //
-                // They have independent counters.
+                // Even if approveAllBookings is running together
+                // with approveBooking, quota cannot exceed limit.
                 // ==================================================
 
+                const updatedQuota =
+                    await DailyClinicQuota.findOneAndUpdate(
 
+                        {
+                            _id:
+                                dailyQuotaRecord._id,
 
-                // ==================================================
-                // 12. Atomically increment the counter
-                //
-                // $inc is atomic in MongoDB.
-                //
-                // This is important for preventing duplicate
-                // queue numbers when multiple requests are
-                // processed at the same time.
-                // ==================================================
-const today = getTodayDateString();
+                            $expr: {
+                                $lt: [
+                                    "$usedQuota",
+                                    "$quota"
+                                ]
+                            }
+                        },
 
-const counterId =
-    `${booking.clinicId.toString()}_${today}`;
-                const counter = await Counter.findOneAndUpdate(
-                    {
-                        _id: counterId
-                    },
-                    {
-                        $inc: {
-                            seq: 1
+                        {
+                            $inc: {
+                                usedQuota: 1
+                            }
+                        },
+
+                        {
+                            new: true
                         }
-                    },
-                    {
-                        new: true,
-                        upsert: true
-                    }
-                );
+                    );
+
 
                 // ==================================================
-                // 13. Safety check
-                //
-                // This should normally never happen.
+                // 14. Quota was consumed by another request
                 // ==================================================
+
+                if (!updatedQuota) {
+
+                    // Remaining bookings stay pending.
+
+                    skippedCount +=
+                        pendingBookings.length -
+                        clinicApprovedCount;
+
+                    break;
+                }
+
+
+                // ==================================================
+                // 15. Generate queue number
+                // ==================================================
+
+                const counterId =
+                    `${clinic._id.toString()}_${today}`;
+
+
+                const counter =
+                    await Counter.findOneAndUpdate(
+
+                        {
+                            _id: counterId
+                        },
+
+                        {
+                            $inc: {
+                                seq: 1
+                            }
+                        },
+
+                        {
+                            new: true,
+
+                            upsert: true
+                        }
+                    );
+
 
                 if (!counter) {
+
+                    // Rollback quota reservation
+
+                    await DailyClinicQuota.findOneAndUpdate(
+
+                        {
+                            _id:
+                                dailyQuotaRecord._id,
+
+                            usedQuota: {
+                                $gt: 0
+                            }
+                        },
+
+                        {
+                            $inc: {
+                                usedQuota: -1
+                            }
+                        }
+                    );
+
+
                     throw new Error(
                         `Failed to generate queue number for booking ${booking._id}`
                     );
                 }
 
-                // ==================================================
-                // 14. Update booking
-                // ==================================================
-
-                booking.queueNumber = counter.seq;
-                booking.bookingDate = today;
-                booking.status = "approved";
 
                 // ==================================================
-                // 15. Save booking
+                // 16. Safety check
                 // ==================================================
 
-                await booking.save();
+                if (
+                    counter.seq >
+                    updatedQuota.quota
+                ) {
+
+                    // Rollback counter
+
+                    await Counter.findOneAndUpdate(
+
+                        {
+                            _id: counterId,
+
+                            seq: {
+                                $gte: counter.seq
+                            }
+                        },
+
+                        {
+                            $inc: {
+                                seq: -1
+                            }
+                        }
+                    );
+
+
+                    // Rollback quota
+
+                    await DailyClinicQuota.findOneAndUpdate(
+
+                        {
+                            _id:
+                                dailyQuotaRecord._id,
+
+                            usedQuota: {
+                                $gt: 0
+                            }
+                        },
+
+                        {
+                            $inc: {
+                                usedQuota: -1
+                            }
+                        }
+                    );
+
+
+                    throw new Error(
+                        "Queue number exceeded daily quota"
+                    );
+                }
+
+
+                // ==================================================
+                // 17. Update booking
+                // ==================================================
+
+                booking.queueNumber =
+                    counter.seq;
+
+                booking.bookingDate =
+                    today;
+
+                booking.status =
+                    "approved";
+
+
+                // ==================================================
+                // 18. Save booking
+                // ==================================================
+
+                try {
+
+                    await booking.save();
+
+                } catch (error) {
+
+                    // Rollback quota
+
+                    await DailyClinicQuota.findOneAndUpdate(
+
+                        {
+                            _id:
+                                dailyQuotaRecord._id,
+
+                            usedQuota: {
+                                $gt: 0
+                            }
+                        },
+
+                        {
+                            $inc: {
+                                usedQuota: -1
+                            }
+                        }
+                    );
+
+
+                    // Rollback counter
+
+                    await Counter.findOneAndUpdate(
+
+                        {
+                            _id: counterId,
+
+                            seq: {
+                                $gte: counter.seq
+                            }
+                        },
+
+                        {
+                            $inc: {
+                                seq: -1
+                            }
+                        }
+                    );
+
+
+                    throw error;
+                }
+
+
+                // ==================================================
+                // 19. Success
+                // ==================================================
 
                 clinicApprovedCount++;
+
                 approvedCount++;
             }
 
+
             // ====================================================
-            // 16. Store clinic result
+            // 20. Get final quota state
             // ====================================================
+
+            const finalQuota =
+                await DailyClinicQuota.findById(
+                    dailyQuotaRecord._id
+                );
+
+
+            const finalRemainingQuota =
+                finalQuota
+                    ? Math.max(
+                        finalQuota.quota -
+                        finalQuota.usedQuota,
+                        0
+                    )
+                    : 0;
+
+
+            // ====================================================
+            // 21. Calculate actual skipped bookings
+            // ====================================================
+
+            const actualSkippedBookings =
+                Math.max(
+                    pendingBookings.length -
+                    clinicApprovedCount,
+                    0
+                );
+
 
             clinicResults.push({
-                clinicId: clinic._id,
-                clinicName: clinic.name,
 
-                dailyQuota: clinic.dailyQuota,
+                clinicId:
+                    clinic._id,
 
-                usedQuota,
+                clinicName:
+                    clinic.name,
 
-                availableQuota,
+                dailyQuota:
+                    finalQuota.quota,
 
-                pendingBookings: pendingBookings.length,
+                usedQuota:
+                    finalQuota.usedQuota,
 
-                approvedBookings: clinicApprovedCount,
+                remainingQuota:
+                    finalRemainingQuota,
 
-                skippedBookings: bookingsToSkip.length
+                pendingBookings:
+                    pendingBookings.length,
+
+                approvedBookings:
+                    clinicApprovedCount,
+
+                skippedBookings:
+                    actualSkippedBookings
+
             });
         }
 
+
         // ========================================================
-        // 17. If nothing was approved
+        // 22. Nothing approved
         // ========================================================
 
         if (approvedCount === 0) {
 
             return res.status(400).json({
-                error: "No bookings could be approved",
+
+                error:
+                    "No bookings could be approved",
+
                 approvedCount: 0,
+
                 skippedCount,
-                clinics: clinicResults
+
+                bookingDate:
+                    today,
+
+                clinics:
+                    clinicResults
+
             });
         }
 
+
         // ========================================================
-        // 18. Success response
+        // 23. Success
         // ========================================================
 
         return res.status(200).json({
+
+            success: true,
 
             message:
                 "Pending bookings processed successfully",
@@ -1173,30 +2526,35 @@ const counterId =
 
             skippedCount,
 
-            bookingDate: today,
+            bookingDate:
+                today,
 
-            clinics: clinicResults
+            clinics:
+                clinicResults
+
         });
 
-    } catch (error) {
 
-        // ========================================================
-        // Error handling
-        // ========================================================
+    } catch (error) {
 
         console.error(
             "Error in approveAllBookings:",
             error
         );
 
+
         return res.status(500).json({
+
             error:
                 "An error occurred while approving all bookings",
 
-            msg: error.message
+            message:
+                error.message
+
         });
     }
 }
+
             
 // function 11 : reject all pending bookings
 

@@ -16,6 +16,8 @@ const clinicSchema = new mongoose.Schema({
         min:     1,
     },
 
+
+
     isActive: {
         type:    Boolean,
         default: true

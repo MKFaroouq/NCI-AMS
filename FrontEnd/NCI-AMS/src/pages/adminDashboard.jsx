@@ -1977,37 +1977,1690 @@
 // export default AdminDashboard;
 
 
+// import React, { useEffect, useState } from "react";
+// import Swal from "sweetalert2";
+
+// const AdminDashboard = () => {
+//   // =========================
+//   // State
+//   // =========================
+
+//   const [clinics, setClinics] = useState([]);
+//   const [bookings, setBookings] = useState([]);
+
+//   const [loading, setLoading] = useState(true);
+
+//   const [activeSection, setActiveSection] = useState("overview");
+
+//   const [clinicName, setClinicName] = useState("");
+//   const [clinicQuota, setClinicQuota] = useState(100);
+
+//   const [addingClinic, setAddingClinic] = useState(false);
+
+//   // =========================
+//   // Get Clinics
+//   // =========================
+
+//   const getClinics = async () => {
+//     try {
+//       const response = await fetch(
+//         "http://localhost:8000/api/clinics"
+//       );
+
+//       const data = await response.json();
+
+//       if (!response.ok) {
+//         throw new Error(
+//           data.error || "Failed to get clinics"
+//         );
+//       }
+
+//       setClinics(data.clinics || []);
+//     } catch (error) {
+//       console.error("Get Clinics Error:", error);
+
+//       Swal.fire({
+//         title: "Error",
+//         text: error.message,
+//         icon: "error",
+//         confirmButtonText: "OK",
+//       });
+//     }
+//   };
+
+//   // =========================
+//   // Get Bookings
+//   // =========================
+
+//   const getBookings = async () => {
+//     try {
+//       const token = localStorage.getItem("token");
+
+//       if (!token) {
+//         window.location.href = "/login";
+//         return;
+//       }
+
+//       const response = await fetch(
+//         "http://localhost:8000/api/bookings",
+//         {
+//           method: "GET",
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//           },
+//         }
+//       );
+
+//       const data = await response.json();
+
+//       if (!response.ok) {
+//         throw new Error(
+//           data.error || "Failed to get bookings"
+//         );
+//       }
+
+//       setBookings(
+//         data.data?.bookings ||
+//         data.bookings ||
+//         []
+//       );
+//     } catch (error) {
+//       console.error("Get Bookings Error:", error);
+
+//       Swal.fire({
+//         title: "Error",
+//         text: error.message,
+//         icon: "error",
+//         confirmButtonText: "OK",
+//       });
+//     }
+//   };
+
+//   // =========================
+//   // Load Dashboard Data
+//   // =========================
+
+//   const loadDashboard = async () => {
+//     setLoading(true);
+
+//     await Promise.all([
+//       getClinics(),
+//       getBookings(),
+//     ]);
+
+//     setLoading(false);
+//   };
+
+//   useEffect(() => {
+//     loadDashboard();
+//   }, []);
+
+//   // =========================
+//   // Add Clinic
+//   // =========================
+
+//   const handleAddClinic = async (e) => {
+//     e.preventDefault();
+
+//     if (!clinicName.trim()) {
+//       Swal.fire({
+//         title: "Missing Data",
+//         text: "Please enter clinic name.",
+//         icon: "warning",
+//         confirmButtonText: "OK",
+//       });
+
+//       return;
+//     }
+
+//     try {
+//       setAddingClinic(true);
+
+//       const token = localStorage.getItem("token");
+
+//       if (!token) {
+//         window.location.href = "/login";
+//         return;
+//       }
+
+//       const response = await fetch(
+//         "http://localhost:8000/api/clinics",
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${token}`,
+//           },
+//           body: JSON.stringify({
+//             name: clinicName,
+//             quota: Number(clinicQuota),
+//           }),
+//         }
+//       );
+
+//       const data = await response.json();
+
+//       if (!response.ok) {
+//         throw new Error(
+//           data.error || "Failed to add clinic"
+//         );
+//       }
+
+//       await Swal.fire({
+//         title: "Clinic Added",
+//         text: "The clinic was added successfully.",
+//         icon: "success",
+//         confirmButtonText: "OK",
+//         confirmButtonColor: "#0c2340",
+//       });
+
+//       // Clear form
+//       setClinicName("");
+//       setClinicQuota(100);
+
+//       // Refresh clinics
+//       getClinics();
+//     } catch (error) {
+//       console.error("Add Clinic Error:", error);
+
+//       Swal.fire({
+//         title: "Error",
+//         text: error.message,
+//         icon: "error",
+//         confirmButtonText: "OK",
+//       });
+//     } finally {
+//       setAddingClinic(false);
+//     }
+//   };
+
+//   // =========================
+//   // Logout
+//   // =========================
+
+//   const handleLogout = () => {
+//     localStorage.removeItem("token");
+
+//     window.location.href = "/login";
+//   };
+
+//   // =========================
+//   // Booking Statistics
+//   // =========================
+
+//   const totalBookings = bookings.length;
+
+//   const pendingBookings = bookings.filter(
+//     (booking) =>
+//       booking.status === "pending"
+//   ).length;
+
+//   const approvedBookings = bookings.filter(
+//     (booking) =>
+//       booking.status === "approved"
+//   ).length;
+
+//   const rejectedBookings = bookings.filter(
+//     (booking) =>
+//       booking.status === "rejected"
+//   ).length;
+
+//   // =========================
+//   // Status Helper
+//   // =========================
+
+//   const getStatusInfo = (status) => {
+//     switch (status) {
+//       case "pending":
+//         return {
+//           text: "Pending",
+//           className: "status-pending",
+//         };
+
+//       case "approved":
+//         return {
+//           text: "Approved",
+//           className: "status-approved",
+//         };
+
+//       case "rejected":
+//         return {
+//           text: "Rejected",
+//           className: "status-rejected",
+//         };
+
+//       case "exported":
+//         return {
+//           text: "Accepted",
+//           className: "status-exported",
+//         };
+
+//       default:
+//         return {
+//           text: status || "Unknown",
+//           className: "status-unknown",
+//         };
+//     }
+//   };
+
+//   // =========================
+//   // Render
+//   // =========================
+
+//   return (
+//     <div
+//       className="admin-page"
+//       dir="ltr"
+//     >
+
+//       {/* ========================= */}
+//       {/* Header */}
+//       {/* ========================= */}
+
+//       <header className="admin-header">
+
+//         <div>
+//           <h2>
+//             NCI-Q Admin Dashboard
+//           </h2>
+
+//           <p>
+//             System Administration
+//           </p>
+//         </div>
+
+//         <button
+//           type="button"
+//           className="logout-btn"
+//           onClick={handleLogout}
+//         >
+//           Logout
+//         </button>
+
+//       </header>
+
+//       {/* ========================= */}
+//       {/* Dashboard Layout */}
+//       {/* ========================= */}
+
+//       <div className="admin-layout">
+
+//         {/* ========================= */}
+//         {/* Sidebar */}
+//         {/* ========================= */}
+
+//         <aside className="admin-sidebar">
+
+//           <button
+//             className={
+//               activeSection === "overview"
+//                 ? "sidebar-btn active"
+//                 : "sidebar-btn"
+//             }
+//             onClick={() =>
+//               setActiveSection("overview")
+//             }
+//           >
+//             Dashboard
+//           </button>
+
+//           <button
+//             className={
+//               activeSection === "clinics"
+//                 ? "sidebar-btn active"
+//                 : "sidebar-btn"
+//             }
+//             onClick={() =>
+//               setActiveSection("clinics")
+//             }
+//           >
+//             Clinics
+//           </button>
+
+//           <button
+//             className={
+//               activeSection === "bookings"
+//                 ? "sidebar-btn active"
+//                 : "sidebar-btn"
+//             }
+//             onClick={() =>
+//               setActiveSection("bookings")
+//             }
+//           >
+//             Bookings
+//           </button>
+
+//           <button
+//             className={
+//               activeSection === "patients"
+//                 ? "sidebar-btn active"
+//                 : "sidebar-btn"
+//             }
+//             onClick={() =>
+//               setActiveSection("patients")
+//             }
+//           >
+//             Patients
+//           </button>
+
+//         </aside>
+
+//         {/* ========================= */}
+//         {/* Main Content */}
+//         {/* ========================= */}
+
+//         <main className="admin-main">
+
+//           {/* ========================= */}
+//           {/* Loading */}
+//           {/* ========================= */}
+
+//           {loading && (
+//             <div className="loading-box">
+//               Loading dashboard...
+//             </div>
+//           )}
+
+//           {!loading && (
+//             <>
+
+//               {/* ================================================== */}
+//               {/* OVERVIEW */}
+//               {/* ================================================== */}
+
+//               {activeSection === "overview" && (
+//                 <section>
+
+//                   <div className="section-header">
+
+//                     <div>
+//                       <h1>
+//                         Dashboard Overview
+//                       </h1>
+
+//                       <p>
+//                         System summary and statistics
+//                       </p>
+//                     </div>
+
+//                     <button
+//                       className="refresh-btn"
+//                       onClick={loadDashboard}
+//                     >
+//                       Refresh
+//                     </button>
+
+//                   </div>
+
+//                   {/* ========================= */}
+//                   {/* Statistics */}
+//                   {/* ========================= */}
+
+//                   <div className="stats-grid">
+
+//                     <div className="stat-card">
+//                       <span>
+//                         Total Bookings
+//                       </span>
+
+//                       <strong>
+//                         {totalBookings}
+//                       </strong>
+//                     </div>
+
+//                     <div className="stat-card pending-card">
+//                       <span>
+//                         Pending
+//                       </span>
+
+//                       <strong>
+//                         {pendingBookings}
+//                       </strong>
+//                     </div>
+
+//                     <div className="stat-card approved-card">
+//                       <span>
+//                         Approved
+//                       </span>
+
+//                       <strong>
+//                         {approvedBookings}
+//                       </strong>
+//                     </div>
+
+//                     <div className="stat-card rejected-card">
+//                       <span>
+//                         Rejected
+//                       </span>
+
+//                       <strong>
+//                         {rejectedBookings}
+//                       </strong>
+//                     </div>
+
+//                   </div>
+
+//                   {/* ========================= */}
+//                   {/* Quick Info */}
+//                   {/* ========================= */}
+
+//                   <div className="overview-grid">
+
+//                     <div className="dashboard-card">
+
+//                       <h3>
+//                         Clinics
+//                       </h3>
+
+//                       <p>
+//                         Active Clinics
+//                       </p>
+
+//                       <strong className="big-number">
+//                         {clinics.length}
+//                       </strong>
+
+//                     </div>
+
+//                     <div className="dashboard-card">
+
+//                       <h3>
+//                         Pending Requests
+//                       </h3>
+
+//                       <p>
+//                         Waiting for Data Entry review
+//                       </p>
+
+//                       <strong className="big-number">
+//                         {pendingBookings}
+//                       </strong>
+
+//                     </div>
+
+//                   </div>
+
+//                 </section>
+//               )}
+
+//               {/* ================================================== */}
+//               {/* CLINICS */}
+//               {/* ================================================== */}
+
+//               {activeSection === "clinics" && (
+//                 <section>
+
+//                   <div className="section-header">
+
+//                     <div>
+//                       <h1>
+//                         Clinics Management
+//                       </h1>
+
+//                       <p>
+//                         Add and view system clinics
+//                       </p>
+//                     </div>
+
+//                   </div>
+
+//                   {/* ========================= */}
+//                   {/* Add Clinic */}
+//                   {/* ========================= */}
+
+//                   <div className="dashboard-card">
+
+//                     <h3>
+//                       Add New Clinic
+//                     </h3>
+
+//                     <form
+//                       onSubmit={handleAddClinic}
+//                       className="clinic-form"
+//                     >
+
+//                       <div className="form-field">
+
+//                         <label>
+//                           Clinic Name
+//                         </label>
+
+//                         <input
+//                           type="text"
+//                           value={clinicName}
+//                           onChange={(e) =>
+//                             setClinicName(
+//                               e.target.value
+//                             )
+//                           }
+//                           placeholder="Enter clinic name"
+//                         />
+
+//                       </div>
+
+//                       <div className="form-field">
+
+//                         <label>
+//                           Daily Quota
+//                         </label>
+
+//                         <input
+//                           type="number"
+//                           min="1"
+//                           value={clinicQuota}
+//                           onChange={(e) =>
+//                             setClinicQuota(
+//                               e.target.value
+//                             )
+//                           }
+//                         />
+
+//                       </div>
+
+//                       <button
+//                         type="submit"
+//                         className="primary-btn"
+//                         disabled={addingClinic}
+//                       >
+//                         {addingClinic
+//                           ? "Adding..."
+//                           : "Add Clinic"}
+//                       </button>
+
+//                     </form>
+
+//                   </div>
+
+//                   {/* ========================= */}
+//                   {/* Clinics List */}
+//                   {/* ========================= */}
+
+//                   <div className="dashboard-card">
+
+//                     <div className="card-header">
+
+//                       <h3>
+//                         Active Clinics
+//                       </h3>
+
+//                       <span>
+//                         {clinics.length}
+//                       </span>
+
+//                     </div>
+
+//                     {clinics.length === 0 ? (
+//                       <div className="empty-small">
+//                         No active clinics found.
+//                       </div>
+//                     ) : (
+//                       <div className="clinic-grid">
+
+//                         {clinics.map(
+//                           (clinic) => (
+//                             <div
+//                               className="clinic-card"
+//                               key={clinic._id}
+//                             >
+
+//                               <div>
+
+//                                 <h3>
+//                                   {clinic.name}
+//                                 </h3>
+
+//                                 <p>
+//                                   Clinic ID:
+//                                   {" "}
+//                                   {clinic._id}
+//                                 </p>
+
+//                               </div>
+
+//                               <div className="clinic-quota">
+
+//                                 <span>
+//                                   Daily Quota
+//                                 </span>
+
+//                                 <strong>
+//                                   {clinic.quota}
+//                                 </strong>
+
+//                               </div>
+
+//                             </div>
+//                           )
+//                         )}
+
+//                       </div>
+//                     )}
+
+//                   </div>
+
+//                 </section>
+//               )}
+
+//               {/* ================================================== */}
+//               {/* BOOKINGS */}
+//               {/* ================================================== */}
+
+//               {activeSection === "bookings" && (
+//                 <section>
+
+//                   <div className="section-header">
+
+//                     <div>
+//                       <h1>
+//                         Booking Management
+//                       </h1>
+
+//                       <p>
+//                         View all booking requests
+//                       </p>
+//                     </div>
+
+//                   </div>
+
+//                   {bookings.length === 0 ? (
+//                     <div className="empty-box">
+//                       No bookings found.
+//                     </div>
+//                   ) : (
+//                     <div className="booking-grid">
+
+//                       {bookings.map(
+//                         (booking) => {
+
+//                           const status =
+//                             getStatusInfo(
+//                               booking.status
+//                             );
+
+//                           return (
+//                             <div
+//                               className="booking-card"
+//                               key={booking._id}
+//                             >
+
+//                               <div className="booking-top">
+
+//                                 <div>
+
+//                                   <h3>
+//                                     {
+//                                       booking.patientName
+//                                     }
+//                                   </h3>
+
+//                                   <p>
+//                                     ID:
+//                                     {" "}
+//                                     {
+//                                       booking.nationalId
+//                                     }
+//                                   </p>
+
+//                                 </div>
+
+//                                 <span
+//                                   className={
+//                                     `status-badge ${status.className}`
+//                                   }
+//                                 >
+//                                   {status.text}
+//                                 </span>
+
+//                               </div>
+
+//                               <div className="booking-details">
+
+//                                 <p>
+//                                   <span>
+//                                     Phone
+//                                   </span>
+
+//                                   <strong>
+//                                     {
+//                                       booking.phoneNumber ||
+//                                       "N/A"
+//                                     }
+//                                   </strong>
+//                                 </p>
+
+//                                 <p>
+//                                   <span>
+//                                     Clinic
+//                                   </span>
+
+//                                   <strong>
+//                                     {
+//                                       booking.clinicId?.name ||
+//                                       "Unknown"
+//                                     }
+//                                   </strong>
+//                                 </p>
+
+//                                 <p>
+//                                   <span>
+//                                     Queue Number
+//                                   </span>
+
+//                                   <strong>
+//                                     {
+//                                       booking.queueNumber ||
+//                                       "N/A"
+//                                     }
+//                                   </strong>
+//                                 </p>
+
+//                               </div>
+
+//                             </div>
+//                           );
+//                         }
+//                       )}
+
+//                     </div>
+//                   )}
+
+//                 </section>
+//               )}
+
+//               {/* ================================================== */}
+//               {/* PATIENTS */}
+//               {/* ================================================== */}
+
+//               {activeSection === "patients" && (
+//                 <section>
+
+//                   <div className="section-header">
+
+//                     <div>
+//                       <h1>
+//                         Patients
+//                       </h1>
+
+//                       <p>
+//                         Patient information from booking requests
+//                       </p>
+//                     </div>
+
+//                   </div>
+
+//                   {bookings.length === 0 ? (
+//                     <div className="empty-box">
+//                       No patient records found.
+//                     </div>
+//                   ) : (
+//                     <div className="patient-table-wrapper">
+
+//                       <table className="patient-table">
+
+//                         <thead>
+
+//                           <tr>
+//                             <th>
+//                               Patient Name
+//                             </th>
+
+//                             <th>
+//                               National ID
+//                             </th>
+
+//                             <th>
+//                               Phone
+//                             </th>
+
+//                             <th>
+//                               Clinic
+//                             </th>
+
+//                             <th>
+//                               Status
+//                             </th>
+//                           </tr>
+
+//                         </thead>
+
+//                         <tbody>
+
+//                           {bookings.map(
+//                             (booking) => {
+
+//                               const status =
+//                                 getStatusInfo(
+//                                   booking.status
+//                                 );
+
+//                               return (
+//                                 <tr
+//                                   key={
+//                                     booking._id
+//                                   }
+//                                 >
+
+//                                   <td>
+//                                     {
+//                                       booking.patientName
+//                                     }
+//                                   </td>
+
+//                                   <td>
+//                                     {
+//                                       booking.nationalId
+//                                     }
+//                                   </td>
+
+//                                   <td>
+//                                     {
+//                                       booking.phoneNumber ||
+//                                       "N/A"
+//                                     }
+//                                   </td>
+
+//                                   <td>
+//                                     {
+//                                       booking.clinicId?.name ||
+//                                       "Unknown"
+//                                     }
+//                                   </td>
+
+//                                   <td>
+//                                     <span
+//                                       className={
+//                                         `status-badge ${status.className}`
+//                                       }
+//                                     >
+//                                       {status.text}
+//                                     </span>
+//                                   </td>
+
+//                                 </tr>
+//                               );
+//                             }
+//                           )}
+
+//                         </tbody>
+
+//                       </table>
+
+//                     </div>
+//                   )}
+
+//                 </section>
+//               )}
+
+//             </>
+//           )}
+
+//         </main>
+
+//       </div>
+
+//       {/* ========================= */}
+//       {/* CSS */}
+//       {/* ========================= */}
+
+//       <style>{`
+
+//         * {
+//           box-sizing: border-box;
+//         }
+
+//         .admin-page {
+//           min-height: 100vh;
+//           background: #f5f7fb;
+//           color: #1e293b;
+//           font-family: Arial, sans-serif;
+//         }
+
+//         /* ========================= */
+//         /* Header */
+//         /* ========================= */
+
+//         .admin-header {
+//           height: 75px;
+//           background: #0c2340;
+//           color: white;
+//           padding: 0 30px;
+
+//           display: flex;
+//           justify-content: space-between;
+//           align-items: center;
+
+//           box-shadow:
+//             0 2px 10px rgba(0, 0, 0, 0.08);
+//         }
+
+//         .admin-header h2 {
+//           margin: 0;
+//           font-size: 20px;
+//         }
+
+//         .admin-header p {
+//           margin: 5px 0 0;
+//           color: #cbd5e1;
+//           font-size: 12px;
+//         }
+
+//         .logout-btn {
+//           border: none;
+//           background: white;
+//           color: #0c2340;
+
+//           padding: 9px 18px;
+//           border-radius: 7px;
+
+//           cursor: pointer;
+//           font-weight: bold;
+//         }
+
+//         .logout-btn:hover {
+//           background: #e2e8f0;
+//         }
+
+//         /* ========================= */
+//         /* Layout */
+//         /* ========================= */
+
+//         .admin-layout {
+//           display: flex;
+//           min-height: calc(100vh - 75px);
+//         }
+
+//         /* ========================= */
+//         /* Sidebar */
+//         /* ========================= */
+
+//         .admin-sidebar {
+//           width: 220px;
+//           background: white;
+
+//           border-right:
+//             1px solid #e2e8f0;
+
+//           padding: 25px 15px;
+//         }
+
+//         .sidebar-btn {
+//           width: 100%;
+
+//           border: none;
+//           background: transparent;
+
+//           padding: 13px 15px;
+//           margin-bottom: 6px;
+
+//           border-radius: 7px;
+
+//           text-align: left;
+
+//           cursor: pointer;
+
+//           color: #475569;
+
+//           font-size: 14px;
+//         }
+
+//         .sidebar-btn:hover {
+//           background: #f1f5f9;
+//         }
+
+//         .sidebar-btn.active {
+//           background: #e8eef7;
+//           color: #0c2340;
+//           font-weight: bold;
+//         }
+
+//         /* ========================= */
+//         /* Main */
+//         /* ========================= */
+
+//         .admin-main {
+//           flex: 1;
+//           padding: 35px;
+//           max-width: 1500px;
+//         }
+
+//         /* ========================= */
+//         /* Section Header */
+//         /* ========================= */
+
+//         .section-header {
+//           display: flex;
+//           justify-content: space-between;
+//           align-items: center;
+
+//           margin-bottom: 25px;
+//         }
+
+//         .section-header h1 {
+//           margin: 0;
+//           color: #0f172a;
+//           font-size: 28px;
+//         }
+
+//         .section-header p {
+//           margin: 7px 0 0;
+//           color: #64748b;
+//         }
+
+//         /* ========================= */
+//         /* Buttons */
+//         /* ========================= */
+
+//         .refresh-btn,
+//         .primary-btn {
+//           border: none;
+//           background: #0c2340;
+//           color: white;
+
+//           padding: 10px 18px;
+
+//           border-radius: 7px;
+
+//           cursor: pointer;
+//           font-weight: bold;
+//         }
+
+//         .refresh-btn:hover,
+//         .primary-btn:hover {
+//           background: #16385f;
+//         }
+
+//         .primary-btn:disabled {
+//           opacity: 0.6;
+//           cursor: not-allowed;
+//         }
+
+//         /* ========================= */
+//         /* Statistics */
+//         /* ========================= */
+
+//         .stats-grid {
+//           display: grid;
+
+//           grid-template-columns:
+//             repeat(4, 1fr);
+
+//           gap: 18px;
+
+//           margin-bottom: 25px;
+//         }
+
+//         .stat-card {
+//           background: white;
+
+//           border: 1px solid #e2e8f0;
+
+//           border-radius: 10px;
+
+//           padding: 22px;
+
+//           display: flex;
+//           flex-direction: column;
+
+//           gap: 10px;
+
+//           box-shadow:
+//             0 3px 10px
+//             rgba(15, 23, 42, 0.04);
+//         }
+
+//         .stat-card span {
+//           color: #64748b;
+//           font-size: 13px;
+//         }
+
+//         .stat-card strong {
+//           font-size: 30px;
+//           color: #0c2340;
+//         }
+
+//         .pending-card {
+//           border-top: 4px solid #f59e0b;
+//         }
+
+//         .approved-card {
+//           border-top: 4px solid #16a34a;
+//         }
+
+//         .rejected-card {
+//           border-top: 4px solid #dc2626;
+//         }
+
+//         /* ========================= */
+//         /* Dashboard Cards */
+//         /* ========================= */
+
+//         .overview-grid {
+//           display: grid;
+
+//           grid-template-columns:
+//             repeat(2, 1fr);
+
+//           gap: 20px;
+//         }
+
+//         .dashboard-card {
+//           background: white;
+
+//           border: 1px solid #e2e8f0;
+
+//           border-radius: 10px;
+
+//           padding: 25px;
+
+//           margin-bottom: 20px;
+
+//           box-shadow:
+//             0 3px 10px
+//             rgba(15, 23, 42, 0.04);
+//         }
+
+//         .dashboard-card h3 {
+//           margin: 0 0 7px;
+//           color: #0c2340;
+//         }
+
+//         .dashboard-card p {
+//           margin: 0 0 15px;
+//           color: #64748b;
+//           font-size: 13px;
+//         }
+
+//         .big-number {
+//           font-size: 32px;
+//           color: #0c2340;
+//         }
+
+//         /* ========================= */
+//         /* Clinic Form */
+//         /* ========================= */
+
+//         .clinic-form {
+//           display: flex;
+//           align-items: flex-end;
+//           gap: 15px;
+//         }
+
+//         .form-field {
+//           flex: 1;
+//         }
+
+//         .form-field label {
+//           display: block;
+
+//           margin-bottom: 7px;
+
+//           font-size: 13px;
+//           font-weight: bold;
+
+//           color: #475569;
+//         }
+
+//         .form-field input {
+//           width: 100%;
+
+//           padding: 11px;
+
+//           border:
+//             1px solid #cbd5e1;
+
+//           border-radius: 7px;
+
+//           outline: none;
+//         }
+
+//         .form-field input:focus {
+//           border-color: #0c2340;
+//         }
+
+//         /* ========================= */
+//         /* Card Header */
+//         /* ========================= */
+
+//         .card-header {
+//           display: flex;
+//           justify-content: space-between;
+//           align-items: center;
+
+//           margin-bottom: 20px;
+//         }
+
+//         .card-header h3 {
+//           margin: 0;
+//         }
+
+//         .card-header span {
+//           background: #e8eef7;
+//           color: #0c2340;
+
+//           padding: 5px 10px;
+
+//           border-radius: 20px;
+
+//           font-size: 12px;
+//           font-weight: bold;
+//         }
+
+//         /* ========================= */
+//         /* Clinics */
+//         /* ========================= */
+
+//         .clinic-grid {
+//           display: grid;
+
+//           grid-template-columns:
+//             repeat(
+//               auto-fill,
+//               minmax(250px, 1fr)
+//             );
+
+//           gap: 15px;
+//         }
+
+//         .clinic-card {
+//           border:
+//             1px solid #e2e8f0;
+
+//           border-radius: 9px;
+
+//           padding: 18px;
+
+//           display: flex;
+//           justify-content: space-between;
+//           gap: 15px;
+//         }
+
+//         .clinic-card h3 {
+//           margin: 0 0 7px;
+//           color: #0c2340;
+//         }
+
+//         .clinic-card p {
+//           margin: 0;
+
+//           color: #94a3b8;
+
+//           font-size: 10px;
+
+//           word-break: break-all;
+//         }
+
+//         .clinic-quota {
+//           text-align: right;
+//         }
+
+//         .clinic-quota span {
+//           display: block;
+
+//           color: #94a3b8;
+
+//           font-size: 11px;
+//         }
+
+//         .clinic-quota strong {
+//           display: block;
+
+//           margin-top: 5px;
+
+//           color: #0c2340;
+
+//           font-size: 20px;
+//         }
+
+//         /* ========================= */
+//         /* Booking Grid */
+//         /* ========================= */
+
+//         .booking-grid {
+//           display: grid;
+
+//           grid-template-columns:
+//             repeat(
+//               auto-fill,
+//               minmax(320px, 1fr)
+//             );
+
+//           gap: 18px;
+//         }
+
+//         .booking-card {
+//           background: white;
+
+//           border:
+//             1px solid #e2e8f0;
+
+//           border-radius: 10px;
+
+//           padding: 20px;
+
+//           box-shadow:
+//             0 3px 10px
+//             rgba(15, 23, 42, 0.04);
+//         }
+
+//         .booking-top {
+//           display: flex;
+
+//           justify-content:
+//             space-between;
+
+//           align-items:
+//             flex-start;
+
+//           gap: 10px;
+
+//           margin-bottom: 18px;
+//         }
+
+//         .booking-top h3 {
+//           margin: 0 0 5px;
+
+//           color: #0c2340;
+//         }
+
+//         .booking-top p {
+//           margin: 0;
+
+//           color: #64748b;
+
+//           font-size: 12px;
+//         }
+
+//         .booking-details p {
+//           display: flex;
+
+//           justify-content:
+//             space-between;
+
+//           border-bottom:
+//             1px solid #f1f5f9;
+
+//           padding-bottom: 10px;
+
+//           margin-bottom: 10px;
+//         }
+
+//         .booking-details span {
+//           color: #94a3b8;
+//         }
+
+//         .booking-details strong {
+//           color: #334155;
+//         }
+
+//         /* ========================= */
+//         /* Status */
+//         /* ========================= */
+
+//         .status-badge {
+//           padding: 5px 9px;
+
+//           border-radius: 20px;
+
+//           font-size: 11px;
+
+//           font-weight: bold;
+
+//           white-space: nowrap;
+//         }
+
+//         .status-pending {
+//           background: #fef3c7;
+//           color: #b45309;
+//         }
+
+//         .status-approved {
+//           background: #dcfce7;
+//           color: #15803d;
+//         }
+
+//         .status-rejected {
+//           background: #fee2e2;
+//           color: #b91c1c;
+//         }
+
+//         .status-exported {
+//           background: #e0e7ff;
+//           color: #4338ca;
+//         }
+
+//         .status-unknown {
+//           background: #e2e8f0;
+//           color: #475569;
+//         }
+
+//         /* ========================= */
+//         /* Patient Table */
+//         /* ========================= */
+
+//         .patient-table-wrapper {
+//           background: white;
+
+//           border:
+//             1px solid #e2e8f0;
+
+//           border-radius: 10px;
+
+//           overflow-x: auto;
+//         }
+
+//         .patient-table {
+//           width: 100%;
+
+//           border-collapse:
+//             collapse;
+//         }
+
+//         .patient-table th {
+//           background: #f8fafc;
+
+//           color: #475569;
+
+//           text-align: left;
+
+//           padding: 15px;
+
+//           font-size: 12px;
+
+//           border-bottom:
+//             1px solid #e2e8f0;
+//         }
+
+//         .patient-table td {
+//           padding: 15px;
+
+//           border-bottom:
+//             1px solid #f1f5f9;
+
+//           font-size: 13px;
+//         }
+
+//         .patient-table tr:hover {
+//           background: #f8fafc;
+//         }
+
+//         /* ========================= */
+//         /* Empty */
+//         /* ========================= */
+
+//         .empty-box,
+//         .empty-small,
+//         .loading-box {
+//           background: white;
+
+//           border:
+//             1px solid #e2e8f0;
+
+//           border-radius: 10px;
+
+//           padding: 50px;
+
+//           text-align: center;
+
+//           color: #64748b;
+//         }
+
+//         .empty-small {
+//           padding: 30px;
+//         }
+
+//         /* ========================= */
+//         /* Mobile */
+//         /* ========================= */
+
+//         @media (max-width: 900px) {
+
+//           .admin-sidebar {
+//             width: 180px;
+//           }
+
+//           .stats-grid {
+//             grid-template-columns:
+//               repeat(2, 1fr);
+//           }
+
+//           .clinic-form {
+//             flex-direction: column;
+//             align-items: stretch;
+//           }
+
+//         }
+
+//         @media (max-width: 650px) {
+
+//           .admin-layout {
+//             flex-direction: column;
+//           }
+
+//           .admin-sidebar {
+//             width: 100%;
+
+//             display: flex;
+
+//             overflow-x: auto;
+
+//             padding: 10px;
+//           }
+
+//           .sidebar-btn {
+//             min-width: 120px;
+//           }
+
+//           .admin-main {
+//             padding: 20px;
+//           }
+
+//           .stats-grid {
+//             grid-template-columns: 1fr;
+//           }
+
+//           .overview-grid {
+//             grid-template-columns: 1fr;
+//           }
+
+//           .section-header {
+//             flex-direction: column;
+//             align-items: flex-start;
+//             gap: 15px;
+//           }
+
+//         }
+
+//       `}</style>
+
+//     </div>
+//   );
+// };
+
+// export default AdminDashboard;
+
 import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
+const API_URL = "http://localhost:8000/api";
+
 const AdminDashboard = () => {
-  // =========================
+  // ============================================================
   // State
-  // =========================
+  // ============================================================
 
   const [clinics, setClinics] = useState([]);
   const [bookings, setBookings] = useState([]);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [activeSection, setActiveSection] = useState("overview");
 
+  // Add clinic form
   const [clinicName, setClinicName] = useState("");
   const [clinicQuota, setClinicQuota] = useState(100);
-
   const [addingClinic, setAddingClinic] = useState(false);
 
-  // =========================
-  // Get Clinics
-  // =========================
+  // ============================================================
+  // Get Token
+  // ============================================================
+
+  const getToken = () => {
+    return localStorage.getItem("token");
+  };
+
+  // ============================================================
+  // Handle Unauthorized
+  // ============================================================
+
+  const handleUnauthorized = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  };
+
+  // ============================================================
+  // Get All Clinics
+  // Admin endpoint
+  //
+  // Expected response:
+  // {
+  //   clinics: [
+  //     {
+  //       name,
+  //       quota,
+  //       usedToday,
+  //       remainingToday,
+  //       isActive
+  //     }
+  //   ]
+  // }
+  // ============================================================
 
   const getClinics = async () => {
     try {
+      const token = getToken();
+
+      if (!token) {
+        handleUnauthorized();
+        return;
+      }
+
       const response = await fetch(
-        "http://localhost:8000/api/clinics"
+        `${API_URL}/clinics/all`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       const data = await response.json();
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(
@@ -2028,21 +3681,21 @@ const AdminDashboard = () => {
     }
   };
 
-  // =========================
+  // ============================================================
   // Get Bookings
-  // =========================
+  // ============================================================
 
   const getBookings = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
 
       if (!token) {
-        window.location.href = "/login";
+        handleUnauthorized();
         return;
       }
 
       const response = await fetch(
-        "http://localhost:8000/api/bookings",
+        `${API_URL}/bookings`,
         {
           method: "GET",
           headers: {
@@ -2052,6 +3705,11 @@ const AdminDashboard = () => {
       );
 
       const data = await response.json();
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(
@@ -2076,33 +3734,43 @@ const AdminDashboard = () => {
     }
   };
 
-  // =========================
-  // Load Dashboard Data
-  // =========================
+  // ============================================================
+  // Load Dashboard
+  // ============================================================
 
   const loadDashboard = async () => {
-    setLoading(true);
+    try {
+      setRefreshing(true);
 
-    await Promise.all([
-      getClinics(),
-      getBookings(),
-    ]);
-
-    setLoading(false);
+      await Promise.all([
+        getClinics(),
+        getBookings(),
+      ]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
+
+  // ============================================================
+  // Initial Load
+  // ============================================================
 
   useEffect(() => {
     loadDashboard();
   }, []);
 
-  // =========================
+  // ============================================================
   // Add Clinic
-  // =========================
+  // ============================================================
 
-  const handleAddClinic = async (e) => {
-    e.preventDefault();
+  const handleAddClinic = async (event) => {
+    event.preventDefault();
 
-    if (!clinicName.trim()) {
+    const name = clinicName.trim();
+    const quota = Number(clinicQuota);
+
+    if (!name) {
       Swal.fire({
         title: "Missing Data",
         text: "Please enter clinic name.",
@@ -2113,18 +3781,29 @@ const AdminDashboard = () => {
       return;
     }
 
+    if (!Number.isInteger(quota) || quota <= 0) {
+      Swal.fire({
+        title: "Invalid Quota",
+        text: "Quota must be a positive number.",
+        icon: "warning",
+        confirmButtonText: "OK",
+      });
+
+      return;
+    }
+
     try {
       setAddingClinic(true);
 
-      const token = localStorage.getItem("token");
+      const token = getToken();
 
       if (!token) {
-        window.location.href = "/login";
+        handleUnauthorized();
         return;
       }
 
       const response = await fetch(
-        "http://localhost:8000/api/clinics",
+        `${API_URL}/clinics`,
         {
           method: "POST",
           headers: {
@@ -2132,13 +3811,18 @@ const AdminDashboard = () => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            name: clinicName,
-            quota: Number(clinicQuota),
+            name,
+            quota,
           }),
         }
       );
 
       const data = await response.json();
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(
@@ -2151,15 +3835,13 @@ const AdminDashboard = () => {
         text: "The clinic was added successfully.",
         icon: "success",
         confirmButtonText: "OK",
-        confirmButtonColor: "#0c2340",
       });
 
-      // Clear form
       setClinicName("");
       setClinicQuota(100);
 
-      // Refresh clinics
-      getClinics();
+      await getClinics();
+
     } catch (error) {
       console.error("Add Clinic Error:", error);
 
@@ -2174,19 +3856,114 @@ const AdminDashboard = () => {
     }
   };
 
-  // =========================
+  // ============================================================
+  // Toggle Clinic Status
+  //
+  // Active -> Inactive
+  // Inactive -> Active
+  //
+  // NOTE:
+  // Remaining = 0 does NOT make the clinic inactive.
+  // The clinic stays active and shows:
+  // "Booking Complete Today"
+  // ============================================================
+
+  const handleToggleClinic = async (clinic) => {
+    const newStatus = !clinic.isActive;
+
+    const result = await Swal.fire({
+      title: newStatus
+        ? "Activate Clinic?"
+        : "Deactivate Clinic?",
+
+      text: newStatus
+        ? `Activate ${clinic.name}?`
+        : `Deactivate ${clinic.name}?`,
+
+      icon: "question",
+
+      showCancelButton: true,
+
+      confirmButtonText: newStatus
+        ? "Yes, Activate"
+        : "Yes, Deactivate",
+
+      cancelButtonText: "Cancel",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    try {
+      const token = getToken();
+
+      if (!token) {
+        handleUnauthorized();
+        return;
+      }
+
+      const response = await fetch(
+        `${API_URL}/clinics/${clinic._id}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.status === 401 || response.status === 403) {
+        handleUnauthorized();
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Failed to update clinic status"
+        );
+      }
+
+      await Swal.fire({
+        title: "Updated",
+        text: newStatus
+          ? "Clinic activated successfully."
+          : "Clinic deactivated successfully.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+
+      await getClinics();
+
+    } catch (error) {
+      console.error(
+        "Toggle Clinic Error:",
+        error
+      );
+
+      Swal.fire({
+        title: "Error",
+        text: error.message,
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    }
+  };
+
+  // ============================================================
   // Logout
-  // =========================
+  // ============================================================
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-
     window.location.href = "/login";
   };
 
-  // =========================
+  // ============================================================
   // Booking Statistics
-  // =========================
+  // ============================================================
 
   const totalBookings = bookings.length;
 
@@ -2205,9 +3982,26 @@ const AdminDashboard = () => {
       booking.status === "rejected"
   ).length;
 
-  // =========================
+  const exportedBookings = bookings.filter(
+    (booking) =>
+      booking.status === "exported"
+  ).length;
+
+  // ============================================================
+  // Clinic Statistics
+  // ============================================================
+
+  const activeClinics = clinics.filter(
+    (clinic) => clinic.isActive
+  ).length;
+
+  const inactiveClinics = clinics.filter(
+    (clinic) => !clinic.isActive
+  ).length;
+
+  // ============================================================
   // Status Helper
-  // =========================
+  // ============================================================
 
   const getStatusInfo = (status) => {
     switch (status) {
@@ -2231,7 +4025,7 @@ const AdminDashboard = () => {
 
       case "exported":
         return {
-          text: "Accepted",
+          text: "Exported",
           className: "status-exported",
         };
 
@@ -2243,30 +4037,23 @@ const AdminDashboard = () => {
     }
   };
 
-  // =========================
+  // ============================================================
   // Render
-  // =========================
+  // ============================================================
 
   return (
-    <div
-      className="admin-page"
-      dir="ltr"
-    >
+    <div className="admin-page" dir="ltr">
 
-      {/* ========================= */}
-      {/* Header */}
-      {/* ========================= */}
+      {/* ========================================================
+          HEADER
+      ======================================================== */}
 
       <header className="admin-header">
 
         <div>
-          <h2>
-            NCI-Q Admin Dashboard
-          </h2>
+          <h2>NCI-Q Admin Dashboard</h2>
 
-          <p>
-            System Administration
-          </p>
+          <p>System Administration</p>
         </div>
 
         <button
@@ -2279,19 +4066,20 @@ const AdminDashboard = () => {
 
       </header>
 
-      {/* ========================= */}
-      {/* Dashboard Layout */}
-      {/* ========================= */}
+      {/* ========================================================
+          LAYOUT
+      ======================================================== */}
 
       <div className="admin-layout">
 
-        {/* ========================= */}
-        {/* Sidebar */}
-        {/* ========================= */}
+        {/* ======================================================
+            SIDEBAR
+        ====================================================== */}
 
         <aside className="admin-sidebar">
 
           <button
+            type="button"
             className={
               activeSection === "overview"
                 ? "sidebar-btn active"
@@ -2305,6 +4093,7 @@ const AdminDashboard = () => {
           </button>
 
           <button
+            type="button"
             className={
               activeSection === "clinics"
                 ? "sidebar-btn active"
@@ -2318,6 +4107,7 @@ const AdminDashboard = () => {
           </button>
 
           <button
+            type="button"
             className={
               activeSection === "bookings"
                 ? "sidebar-btn active"
@@ -2331,6 +4121,7 @@ const AdminDashboard = () => {
           </button>
 
           <button
+            type="button"
             className={
               activeSection === "patients"
                 ? "sidebar-btn active"
@@ -2345,28 +4136,22 @@ const AdminDashboard = () => {
 
         </aside>
 
-        {/* ========================= */}
-        {/* Main Content */}
-        {/* ========================= */}
+        {/* ======================================================
+            MAIN
+        ====================================================== */}
 
         <main className="admin-main">
 
-          {/* ========================= */}
-          {/* Loading */}
-          {/* ========================= */}
-
-          {loading && (
+          {loading ? (
             <div className="loading-box">
               Loading dashboard...
             </div>
-          )}
-
-          {!loading && (
+          ) : (
             <>
 
-              {/* ================================================== */}
-              {/* OVERVIEW */}
-              {/* ================================================== */}
+              {/* ==================================================
+                  OVERVIEW
+              ================================================== */}
 
               {activeSection === "overview" && (
                 <section>
@@ -2384,17 +4169,21 @@ const AdminDashboard = () => {
                     </div>
 
                     <button
-                      className="refresh-btn"
+                      type="button"
+                      className="secondary-btn"
                       onClick={loadDashboard}
+                      disabled={refreshing}
                     >
-                      Refresh
+                      {refreshing
+                        ? "Refreshing..."
+                        : "Refresh"}
                     </button>
 
                   </div>
 
-                  {/* ========================= */}
-                  {/* Statistics */}
-                  {/* ========================= */}
+                  {/* ==============================================
+                      BOOKING STATISTICS
+                  ============================================== */}
 
                   <div className="stats-grid">
 
@@ -2408,7 +4197,7 @@ const AdminDashboard = () => {
                       </strong>
                     </div>
 
-                    <div className="stat-card pending-card">
+                    <div className="stat-card">
                       <span>
                         Pending
                       </span>
@@ -2418,7 +4207,7 @@ const AdminDashboard = () => {
                       </strong>
                     </div>
 
-                    <div className="stat-card approved-card">
+                    <div className="stat-card">
                       <span>
                         Approved
                       </span>
@@ -2428,7 +4217,7 @@ const AdminDashboard = () => {
                       </strong>
                     </div>
 
-                    <div className="stat-card rejected-card">
+                    <div className="stat-card">
                       <span>
                         Rejected
                       </span>
@@ -2440,52 +4229,204 @@ const AdminDashboard = () => {
 
                   </div>
 
-                  {/* ========================= */}
-                  {/* Quick Info */}
-                  {/* ========================= */}
+                  {/* ==============================================
+                      SYSTEM SUMMARY
+                  ============================================== */}
 
-                  <div className="overview-grid">
+                  <div className="summary-grid">
 
-                    <div className="dashboard-card">
+                    <div className="summary-card">
 
-                      <h3>
-                        Clinics
-                      </h3>
-
-                      <p>
+                      <span>
                         Active Clinics
-                      </p>
+                      </span>
 
-                      <strong className="big-number">
-                        {clinics.length}
+                      <strong>
+                        {activeClinics}
                       </strong>
 
                     </div>
 
-                    <div className="dashboard-card">
+                    <div className="summary-card">
 
-                      <h3>
-                        Pending Requests
-                      </h3>
+                      <span>
+                        Inactive Clinics
+                      </span>
 
-                      <p>
-                        Waiting for Data Entry review
-                      </p>
+                      <strong>
+                        {inactiveClinics}
+                      </strong>
 
-                      <strong className="big-number">
-                        {pendingBookings}
+                    </div>
+
+                    <div className="summary-card">
+
+                      <span>
+                        Exported
+                      </span>
+
+                      <strong>
+                        {exportedBookings}
+                      </strong>
+
+                    </div>
+
+                    <div className="summary-card">
+
+                      <span>
+                        Total Clinics
+                      </span>
+
+                      <strong>
+                        {clinics.length}
                       </strong>
 
                     </div>
 
                   </div>
 
+                  {/* ==============================================
+                      CLINIC QUOTA OVERVIEW
+                  ============================================== */}
+
+                  <div className="dashboard-card">
+
+                    <div className="card-header">
+
+                      <div>
+                        <h3>
+                          Clinic Capacity
+                        </h3>
+
+                        <p>
+                          Daily booking capacity
+                        </p>
+                      </div>
+
+                      <span>
+                        {clinics.length}
+                      </span>
+
+                    </div>
+
+                    {clinics.length === 0 ? (
+                      <div className="empty-small">
+                        No clinics found.
+                      </div>
+                    ) : (
+                      <div className="capacity-grid">
+
+                        {clinics.map((clinic) => {
+
+                          const quota =
+                            Number(clinic.quota) || 0;
+
+                          const used =
+                            Number(clinic.usedToday) || 0;
+
+                          const remaining =
+                            Number(
+                              clinic.remainingToday
+                            );
+
+                          const finalRemaining =
+                            Number.isFinite(
+                              remaining
+                            )
+                              ? Math.max(
+                                  remaining,
+                                  0
+                                )
+                              : Math.max(
+                                  quota - used,
+                                  0
+                                );
+
+                          return (
+                            <div
+                              className="capacity-card"
+                              key={clinic._id}
+                            >
+
+                              <div className="capacity-top">
+
+                                <div>
+                                  <h3>
+                                    {clinic.name}
+                                  </h3>
+
+                                  <span
+                                    className={
+                                      clinic.isActive
+                                        ? "clinic-status active"
+                                        : "clinic-status inactive"
+                                    }
+                                  >
+                                    {clinic.isActive
+                                      ? "Active"
+                                      : "Inactive"}
+                                  </span>
+                                </div>
+
+                              </div>
+
+                              <div className="capacity-row">
+
+                                <span>
+                                  Capacity
+                                </span>
+
+                                <strong>
+                                  {quota}
+                                </strong>
+
+                              </div>
+
+                              <div className="capacity-row">
+
+                                <span>
+                                  Used Today
+                                </span>
+
+                                <strong>
+                                  {used}
+                                </strong>
+
+                              </div>
+
+                              <div className="capacity-row">
+
+                                <span>
+                                  Remaining
+                                </span>
+
+                                <strong>
+                                  {finalRemaining}
+                                </strong>
+
+                              </div>
+
+                              {finalRemaining === 0 && (
+                                <div className="booking-complete">
+                                  Booking Complete Today
+                                </div>
+                              )}
+
+                            </div>
+                          );
+                        })}
+
+                      </div>
+                    )}
+
+                  </div>
+
                 </section>
               )}
 
-              {/* ================================================== */}
-              {/* CLINICS */}
-              {/* ================================================== */}
+              {/* ==================================================
+                  CLINICS
+              ================================================== */}
 
               {activeSection === "clinics" && (
                 <section>
@@ -2498,15 +4439,23 @@ const AdminDashboard = () => {
                       </h1>
 
                       <p>
-                        Add and view system clinics
+                        Manage clinics and daily capacity
                       </p>
                     </div>
 
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={getClinics}
+                    >
+                      Refresh
+                    </button>
+
                   </div>
 
-                  {/* ========================= */}
-                  {/* Add Clinic */}
-                  {/* ========================= */}
+                  {/* ==============================================
+                      ADD CLINIC
+                  ============================================== */}
 
                   <div className="dashboard-card">
 
@@ -2514,9 +4463,14 @@ const AdminDashboard = () => {
                       Add New Clinic
                     </h3>
 
+                    <p className="card-description">
+                      Create a new clinic with its daily
+                      booking capacity.
+                    </p>
+
                     <form
-                      onSubmit={handleAddClinic}
                       className="clinic-form"
+                      onSubmit={handleAddClinic}
                     >
 
                       <div className="form-field">
@@ -2528,9 +4482,9 @@ const AdminDashboard = () => {
                         <input
                           type="text"
                           value={clinicName}
-                          onChange={(e) =>
+                          onChange={(event) =>
                             setClinicName(
-                              e.target.value
+                              event.target.value
                             )
                           }
                           placeholder="Enter clinic name"
@@ -2538,7 +4492,7 @@ const AdminDashboard = () => {
 
                       </div>
 
-                      <div className="form-field">
+                      <div className="form-field quota-field">
 
                         <label>
                           Daily Quota
@@ -2548,9 +4502,9 @@ const AdminDashboard = () => {
                           type="number"
                           min="1"
                           value={clinicQuota}
-                          onChange={(e) =>
+                          onChange={(event) =>
                             setClinicQuota(
-                              e.target.value
+                              event.target.value
                             )
                           }
                         />
@@ -2571,17 +4525,23 @@ const AdminDashboard = () => {
 
                   </div>
 
-                  {/* ========================= */}
-                  {/* Clinics List */}
-                  {/* ========================= */}
+                  {/* ==============================================
+                      CLINICS LIST
+                  ============================================== */}
 
                   <div className="dashboard-card">
 
                     <div className="card-header">
 
-                      <h3>
-                        Active Clinics
-                      </h3>
+                      <div>
+                        <h3>
+                          All Clinics
+                        </h3>
+
+                        <p>
+                          Active and inactive clinics
+                        </p>
+                      </div>
 
                       <span>
                         {clinics.length}
@@ -2591,47 +4551,136 @@ const AdminDashboard = () => {
 
                     {clinics.length === 0 ? (
                       <div className="empty-small">
-                        No active clinics found.
+                        No clinics found.
                       </div>
                     ) : (
-                      <div className="clinic-grid">
+                      <div className="clinic-list">
 
-                        {clinics.map(
-                          (clinic) => (
+                        {clinics.map((clinic) => {
+
+                          const quota =
+                            Number(clinic.quota) || 0;
+
+                          const used =
+                            Number(clinic.usedToday) || 0;
+
+                          const remaining =
+                            Number(
+                              clinic.remainingToday
+                            );
+
+                          const finalRemaining =
+                            Number.isFinite(
+                              remaining
+                            )
+                              ? Math.max(
+                                  remaining,
+                                  0
+                                )
+                              : Math.max(
+                                  quota - used,
+                                  0
+                                );
+
+                          return (
                             <div
-                              className="clinic-card"
+                              className="clinic-management-card"
                               key={clinic._id}
                             >
 
-                              <div>
+                              {/* Clinic Name */}
+
+                              <div className="clinic-main-info">
 
                                 <h3>
                                   {clinic.name}
                                 </h3>
 
-                                <p>
-                                  Clinic ID:
-                                  {" "}
-                                  {clinic._id}
-                                </p>
-
-                              </div>
-
-                              <div className="clinic-quota">
-
-                                <span>
-                                  Daily Quota
+                                <span
+                                  className={
+                                    clinic.isActive
+                                      ? "clinic-status active"
+                                      : "clinic-status inactive"
+                                  }
+                                >
+                                  {clinic.isActive
+                                    ? "Active"
+                                    : "Inactive"}
                                 </span>
 
-                                <strong>
-                                  {clinic.quota}
-                                </strong>
+                              </div>
+
+                              {/* Quota */}
+
+                              <div className="quota-info">
+
+                                <div>
+                                  <span>
+                                    Capacity
+                                  </span>
+
+                                  <strong>
+                                    {quota}
+                                  </strong>
+                                </div>
+
+                                <div>
+                                  <span>
+                                    Used Today
+                                  </span>
+
+                                  <strong>
+                                    {used}
+                                  </strong>
+                                </div>
+
+                                <div>
+                                  <span>
+                                    Remaining
+                                  </span>
+
+                                  <strong>
+                                    {finalRemaining}
+                                  </strong>
+                                </div>
 
                               </div>
 
+                              {/* Daily Status */}
+
+                              <div className="daily-status">
+
+                                {finalRemaining === 0 ? (
+                                  <span>
+                                    Booking Complete Today
+                                  </span>
+                                ) : (
+                                  <span>
+                                    Available Today
+                                  </span>
+                                )}
+
+                              </div>
+
+                              {/* Toggle */}
+
+                              <button
+                                type="button"
+                                className="secondary-btn"
+                                onClick={() =>
+                                  handleToggleClinic(
+                                    clinic
+                                  )
+                                }
+                              >
+                                {clinic.isActive
+                                  ? "Deactivate"
+                                  : "Activate"}
+                              </button>
+
                             </div>
-                          )
-                        )}
+                          );
+                        })}
 
                       </div>
                     )}
@@ -2641,9 +4690,9 @@ const AdminDashboard = () => {
                 </section>
               )}
 
-              {/* ================================================== */}
-              {/* BOOKINGS */}
-              {/* ================================================== */}
+              {/* ==================================================
+                  BOOKINGS
+              ================================================== */}
 
               {activeSection === "bookings" && (
                 <section>
@@ -2656,9 +4705,17 @@ const AdminDashboard = () => {
                       </h1>
 
                       <p>
-                        View all booking requests
+                        View booking requests
                       </p>
                     </div>
+
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={getBookings}
+                    >
+                      Refresh
+                    </button>
 
                   </div>
 
@@ -2669,97 +4726,82 @@ const AdminDashboard = () => {
                   ) : (
                     <div className="booking-grid">
 
-                      {bookings.map(
-                        (booking) => {
+                      {bookings.map((booking) => {
 
-                          const status =
-                            getStatusInfo(
-                              booking.status
-                            );
+                        const status =
+                          getStatusInfo(
+                            booking.status
+                          );
 
-                          return (
-                            <div
-                              className="booking-card"
-                              key={booking._id}
-                            >
+                        return (
+                          <div
+                            className="booking-card"
+                            key={booking._id}
+                          >
 
-                              <div className="booking-top">
+                            <div className="booking-top">
 
-                                <div>
+                              <div>
+                                <h3>
+                                  {booking.patientName}
+                                </h3>
 
-                                  <h3>
-                                    {
-                                      booking.patientName
-                                    }
-                                  </h3>
-
-                                  <p>
-                                    ID:
-                                    {" "}
-                                    {
-                                      booking.nationalId
-                                    }
-                                  </p>
-
-                                </div>
-
-                                <span
-                                  className={
-                                    `status-badge ${status.className}`
-                                  }
-                                >
-                                  {status.text}
-                                </span>
-
+                                <p>
+                                  ID:{" "}
+                                  {booking.nationalId}
+                                </p>
                               </div>
 
-                              <div className="booking-details">
+                              <span
+                                className={
+                                  `status-badge ${status.className}`
+                                }
+                              >
+                                {status.text}
+                              </span>
 
-                                <p>
-                                  <span>
-                                    Phone
-                                  </span>
+                            </div>
 
-                                  <strong>
-                                    {
-                                      booking.phoneNumber ||
-                                      "N/A"
-                                    }
-                                  </strong>
-                                </p>
+                            <div className="booking-details">
 
-                                <p>
-                                  <span>
-                                    Clinic
-                                  </span>
+                              <div>
+                                <span>
+                                  Phone
+                                </span>
 
-                                  <strong>
-                                    {
-                                      booking.clinicId?.name ||
-                                      "Unknown"
-                                    }
-                                  </strong>
-                                </p>
+                                <strong>
+                                  {booking.phoneNumber ||
+                                    "N/A"}
+                                </strong>
+                              </div>
 
-                                <p>
-                                  <span>
-                                    Queue Number
-                                  </span>
+                              <div>
+                                <span>
+                                  Clinic
+                                </span>
 
-                                  <strong>
-                                    {
-                                      booking.queueNumber ||
-                                      "N/A"
-                                    }
-                                  </strong>
-                                </p>
+                                <strong>
+                                  {booking.clinicId?.name ||
+                                    "Unknown"}
+                                </strong>
+                              </div>
 
+                              <div>
+                                <span>
+                                  Queue Number
+                                </span>
+
+                                <strong>
+                                  {booking.queueNumber ||
+                                    "N/A"}
+                                </strong>
                               </div>
 
                             </div>
-                          );
-                        }
-                      )}
+
+                          </div>
+                        );
+                      })}
 
                     </div>
                   )}
@@ -2767,9 +4809,9 @@ const AdminDashboard = () => {
                 </section>
               )}
 
-              {/* ================================================== */}
-              {/* PATIENTS */}
-              {/* ================================================== */}
+              {/* ==================================================
+                  PATIENTS
+              ================================================== */}
 
               {activeSection === "patients" && (
                 <section>
@@ -2798,8 +4840,8 @@ const AdminDashboard = () => {
                       <table className="patient-table">
 
                         <thead>
-
                           <tr>
+
                             <th>
                               Patient Name
                             </th>
@@ -2817,69 +4859,66 @@ const AdminDashboard = () => {
                             </th>
 
                             <th>
+                              Queue
+                            </th>
+
+                            <th>
                               Status
                             </th>
-                          </tr>
 
+                          </tr>
                         </thead>
 
                         <tbody>
 
-                          {bookings.map(
-                            (booking) => {
+                          {bookings.map((booking) => {
 
-                              const status =
-                                getStatusInfo(
-                                  booking.status
-                                );
-
-                              return (
-                                <tr
-                                  key={
-                                    booking._id
-                                  }
-                                >
-
-                                  <td>
-                                    {
-                                      booking.patientName
-                                    }
-                                  </td>
-
-                                  <td>
-                                    {
-                                      booking.nationalId
-                                    }
-                                  </td>
-
-                                  <td>
-                                    {
-                                      booking.phoneNumber ||
-                                      "N/A"
-                                    }
-                                  </td>
-
-                                  <td>
-                                    {
-                                      booking.clinicId?.name ||
-                                      "Unknown"
-                                    }
-                                  </td>
-
-                                  <td>
-                                    <span
-                                      className={
-                                        `status-badge ${status.className}`
-                                      }
-                                    >
-                                      {status.text}
-                                    </span>
-                                  </td>
-
-                                </tr>
+                            const status =
+                              getStatusInfo(
+                                booking.status
                               );
-                            }
-                          )}
+
+                            return (
+                              <tr
+                                key={booking._id}
+                              >
+
+                                <td>
+                                  {booking.patientName}
+                                </td>
+
+                                <td>
+                                  {booking.nationalId}
+                                </td>
+
+                                <td>
+                                  {booking.phoneNumber ||
+                                    "N/A"}
+                                </td>
+
+                                <td>
+                                  {booking.clinicId?.name ||
+                                    "Unknown"}
+                                </td>
+
+                                <td>
+                                  {booking.queueNumber ||
+                                    "N/A"}
+                                </td>
+
+                                <td>
+                                  <span
+                                    className={
+                                      `status-badge ${status.className}`
+                                    }
+                                  >
+                                    {status.text}
+                                  </span>
+                                </td>
+
+                              </tr>
+                            );
+                          })}
 
                         </tbody>
 
@@ -2898,9 +4937,9 @@ const AdminDashboard = () => {
 
       </div>
 
-      {/* ========================= */}
-      {/* CSS */}
-      {/* ========================= */}
+      {/* ========================================================
+          CSS
+      ======================================================== */}
 
       <style>{`
 
@@ -2915,22 +4954,22 @@ const AdminDashboard = () => {
           font-family: Arial, sans-serif;
         }
 
-        /* ========================= */
-        /* Header */
-        /* ========================= */
+        /* ======================================================
+           HEADER
+        ====================================================== */
 
         .admin-header {
-          height: 75px;
+          height: 70px;
           background: #0c2340;
           color: white;
-          padding: 0 30px;
+
+          padding: 0 28px;
 
           display: flex;
           justify-content: space-between;
           align-items: center;
 
-          box-shadow:
-            0 2px 10px rgba(0, 0, 0, 0.08);
+          border-bottom: 1px solid #dbe2ea;
         }
 
         .admin-header h2 {
@@ -2940,8 +4979,8 @@ const AdminDashboard = () => {
 
         .admin-header p {
           margin: 5px 0 0;
-          color: #cbd5e1;
           font-size: 12px;
+          color: #dbe4ef;
         }
 
         .logout-btn {
@@ -2950,35 +4989,36 @@ const AdminDashboard = () => {
           color: #0c2340;
 
           padding: 9px 18px;
+
           border-radius: 7px;
 
           cursor: pointer;
+
           font-weight: bold;
         }
 
         .logout-btn:hover {
-          background: #e2e8f0;
+          background: #f1f5f9;
         }
 
-        /* ========================= */
-        /* Layout */
-        /* ========================= */
+        /* ======================================================
+           LAYOUT
+        ====================================================== */
 
         .admin-layout {
           display: flex;
-          min-height: calc(100vh - 75px);
+          min-height: calc(100vh - 70px);
         }
 
-        /* ========================= */
-        /* Sidebar */
-        /* ========================= */
+        /* ======================================================
+           SIDEBAR
+        ====================================================== */
 
         .admin-sidebar {
           width: 220px;
           background: white;
 
-          border-right:
-            1px solid #e2e8f0;
+          border-right: 1px solid #dbe2ea;
 
           padding: 25px 15px;
         }
@@ -2989,8 +5029,9 @@ const AdminDashboard = () => {
           border: none;
           background: transparent;
 
-          padding: 13px 15px;
-          margin-bottom: 6px;
+          padding: 12px 15px;
+
+          margin-bottom: 5px;
 
           border-radius: 7px;
 
@@ -2998,13 +5039,13 @@ const AdminDashboard = () => {
 
           cursor: pointer;
 
-          color: #475569;
+          color: #334155;
 
           font-size: 14px;
         }
 
         .sidebar-btn:hover {
-          background: #f1f5f9;
+          background: #f8fafc;
         }
 
         .sidebar-btn.active {
@@ -3013,175 +5054,393 @@ const AdminDashboard = () => {
           font-weight: bold;
         }
 
-        /* ========================= */
-        /* Main */
-        /* ========================= */
+        /* ======================================================
+           MAIN
+        ====================================================== */
 
         .admin-main {
           flex: 1;
-          padding: 35px;
-          max-width: 1500px;
+          padding: 30px;
+          min-width: 0;
         }
 
-        /* ========================= */
-        /* Section Header */
-        /* ========================= */
+        /* ======================================================
+           SECTION HEADER
+        ====================================================== */
 
         .section-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
 
+          gap: 20px;
+
           margin-bottom: 25px;
         }
 
         .section-header h1 {
           margin: 0;
+
+          font-size: 27px;
+
           color: #0f172a;
-          font-size: 28px;
         }
 
         .section-header p {
           margin: 7px 0 0;
+
           color: #64748b;
+
+          font-size: 14px;
         }
 
-        /* ========================= */
-        /* Buttons */
-        /* ========================= */
+        /* ======================================================
+           BUTTONS
+        ====================================================== */
 
-        .refresh-btn,
-        .primary-btn {
+        .primary-btn,
+        .secondary-btn {
           border: none;
-          background: #0c2340;
-          color: white;
 
           padding: 10px 18px;
 
           border-radius: 7px;
 
           cursor: pointer;
+
           font-weight: bold;
+
+          font-size: 13px;
         }
 
-        .refresh-btn:hover,
+        .primary-btn {
+          background: #0c2340;
+          color: white;
+        }
+
         .primary-btn:hover {
-          background: #16385f;
+          background: #173b63;
         }
 
-        .primary-btn:disabled {
+        .secondary-btn {
+          background: white;
+
+          color: #0c2340;
+
+          border: 1px solid #cbd5e1;
+        }
+
+        .secondary-btn:hover {
+          background: #f8fafc;
+        }
+
+        .primary-btn:disabled,
+        .secondary-btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
         }
 
-        /* ========================= */
-        /* Statistics */
-        /* ========================= */
+        /* ======================================================
+           STATISTICS
+           
+           Clean cards.
+           No colored top borders.
+           No gradients.
+           No AI-style visual effects.
+        ====================================================== */
 
         .stats-grid {
           display: grid;
 
           grid-template-columns:
-            repeat(4, 1fr);
+            repeat(4, minmax(0, 1fr));
+
+          gap: 18px;
+
+          margin-bottom: 20px;
+        }
+
+        .stat-card {
+          background: white;
+
+          border: 1px solid #dbe2ea;
+
+          border-radius: 10px;
+
+          padding: 22px;
+
+          min-height: 115px;
+
+          display: flex;
+
+          flex-direction: column;
+
+          justify-content: space-between;
+
+          box-shadow:
+            0 2px 6px
+            rgba(15, 23, 42, 0.04);
+        }
+
+        .stat-card span {
+          color: #64748b;
+
+          font-size: 13px;
+        }
+
+        .stat-card strong {
+          color: #0c2340;
+
+          font-size: 30px;
+
+          line-height: 1;
+        }
+
+        /* ======================================================
+           SUMMARY
+        ====================================================== */
+
+        .summary-grid {
+          display: grid;
+
+          grid-template-columns:
+            repeat(4, minmax(0, 1fr));
 
           gap: 18px;
 
           margin-bottom: 25px;
         }
 
-        .stat-card {
+        .summary-card {
           background: white;
 
-          border: 1px solid #e2e8f0;
+          border: 1px solid #dbe2ea;
 
           border-radius: 10px;
 
-          padding: 22px;
+          padding: 20px;
 
           display: flex;
-          flex-direction: column;
 
-          gap: 10px;
+          justify-content: space-between;
 
-          box-shadow:
-            0 3px 10px
-            rgba(15, 23, 42, 0.04);
+          align-items: center;
         }
 
-        .stat-card span {
+        .summary-card span {
           color: #64748b;
+
           font-size: 13px;
         }
 
-        .stat-card strong {
-          font-size: 30px;
+        .summary-card strong {
           color: #0c2340;
+
+          font-size: 22px;
         }
 
-        .pending-card {
-          border-top: 4px solid #f59e0b;
-        }
-
-        .approved-card {
-          border-top: 4px solid #16a34a;
-        }
-
-        .rejected-card {
-          border-top: 4px solid #dc2626;
-        }
-
-        /* ========================= */
-        /* Dashboard Cards */
-        /* ========================= */
-
-        .overview-grid {
-          display: grid;
-
-          grid-template-columns:
-            repeat(2, 1fr);
-
-          gap: 20px;
-        }
+        /* ======================================================
+           DASHBOARD CARD
+        ====================================================== */
 
         .dashboard-card {
           background: white;
 
-          border: 1px solid #e2e8f0;
+          border: 1px solid #dbe2ea;
 
           border-radius: 10px;
 
-          padding: 25px;
+          padding: 24px;
 
           margin-bottom: 20px;
 
           box-shadow:
-            0 3px 10px
+            0 2px 6px
             rgba(15, 23, 42, 0.04);
         }
 
         .dashboard-card h3 {
-          margin: 0 0 7px;
+          margin: 0;
+
           color: #0c2340;
+
+          font-size: 17px;
         }
 
-        .dashboard-card p {
-          margin: 0 0 15px;
+        .card-description {
+          margin: 7px 0 20px;
+
           color: #64748b;
+
           font-size: 13px;
         }
 
-        .big-number {
-          font-size: 32px;
-          color: #0c2340;
+        .card-header {
+          display: flex;
+
+          justify-content: space-between;
+
+          align-items: center;
+
+          gap: 20px;
+
+          margin-bottom: 20px;
         }
 
-        /* ========================= */
-        /* Clinic Form */
-        /* ========================= */
+        .card-header p {
+          margin: 6px 0 0;
+
+          color: #64748b;
+
+          font-size: 13px;
+        }
+
+        .card-header > span {
+          min-width: 32px;
+
+          height: 32px;
+
+          padding: 0 10px;
+
+          display: flex;
+
+          align-items: center;
+
+          justify-content: center;
+
+          border-radius: 20px;
+
+          background: #f1f5f9;
+
+          color: #334155;
+
+          font-size: 12px;
+
+          font-weight: bold;
+        }
+
+        /* ======================================================
+           CAPACITY GRID
+        ====================================================== */
+
+        .capacity-grid {
+          display: grid;
+
+          grid-template-columns:
+            repeat(
+              auto-fill,
+              minmax(250px, 1fr)
+            );
+
+          gap: 15px;
+        }
+
+        .capacity-card {
+          border: 1px solid #e2e8f0;
+
+          border-radius: 9px;
+
+          padding: 18px;
+
+          background: white;
+        }
+
+        .capacity-top {
+          margin-bottom: 18px;
+        }
+
+        .capacity-top h3 {
+          margin: 0 0 8px;
+
+          font-size: 16px;
+        }
+
+        .capacity-row {
+          display: flex;
+
+          justify-content: space-between;
+
+          align-items: center;
+
+          padding: 9px 0;
+
+          border-bottom:
+            1px solid #f1f5f9;
+        }
+
+        .capacity-row:last-of-type {
+          border-bottom: none;
+        }
+
+        .capacity-row span {
+          color: #64748b;
+
+          font-size: 12px;
+        }
+
+        .capacity-row strong {
+          color: #0c2340;
+
+          font-size: 14px;
+        }
+
+        .booking-complete {
+          margin-top: 15px;
+
+          padding: 10px;
+
+          border: 1px solid #dbe2ea;
+
+          border-radius: 7px;
+
+          text-align: center;
+
+          color: #334155;
+
+          background: #f8fafc;
+
+          font-size: 12px;
+
+          font-weight: bold;
+        }
+
+        /* ======================================================
+           CLINIC STATUS
+        ====================================================== */
+
+        .clinic-status {
+          display: inline-block;
+
+          padding: 4px 8px;
+
+          border-radius: 5px;
+
+          font-size: 11px;
+
+          font-weight: bold;
+        }
+
+        .clinic-status.active {
+          background: #f1f5f9;
+
+          color: #334155;
+        }
+
+        .clinic-status.inactive {
+          background: #f1f5f9;
+
+          color: #64748b;
+        }
+
+        /* ======================================================
+           CLINIC FORM
+        ====================================================== */
 
         .clinic-form {
           display: flex;
+
           align-items: flex-end;
+
           gap: 15px;
         }
 
@@ -3189,15 +5448,20 @@ const AdminDashboard = () => {
           flex: 1;
         }
 
+        .quota-field {
+          max-width: 220px;
+        }
+
         .form-field label {
           display: block;
 
           margin-bottom: 7px;
 
-          font-size: 13px;
-          font-weight: bold;
-
           color: #475569;
+
+          font-size: 13px;
+
+          font-weight: bold;
         }
 
         .form-field input {
@@ -3211,109 +5475,95 @@ const AdminDashboard = () => {
           border-radius: 7px;
 
           outline: none;
+
+          font-size: 13px;
         }
 
         .form-field input:focus {
           border-color: #0c2340;
         }
 
-        /* ========================= */
-        /* Card Header */
-        /* ========================= */
+        /* ======================================================
+           CLINIC LIST
+        ====================================================== */
 
-        .card-header {
+        .clinic-list {
           display: flex;
-          justify-content: space-between;
-          align-items: center;
 
-          margin-bottom: 20px;
+          flex-direction: column;
+
+          gap: 12px;
         }
 
-        .card-header h3 {
-          margin: 0;
-        }
-
-        .card-header span {
-          background: #e8eef7;
-          color: #0c2340;
-
-          padding: 5px 10px;
-
-          border-radius: 20px;
-
-          font-size: 12px;
-          font-weight: bold;
-        }
-
-        /* ========================= */
-        /* Clinics */
-        /* ========================= */
-
-        .clinic-grid {
+        .clinic-management-card {
           display: grid;
 
           grid-template-columns:
-            repeat(
-              auto-fill,
-              minmax(250px, 1fr)
-            );
+            minmax(150px, 1fr)
+            minmax(300px, 2fr)
+            minmax(150px, auto)
+            auto;
 
-          gap: 15px;
-        }
+          align-items: center;
 
-        .clinic-card {
+          gap: 20px;
+
+          padding: 18px;
+
           border:
             1px solid #e2e8f0;
 
           border-radius: 9px;
-
-          padding: 18px;
-
-          display: flex;
-          justify-content: space-between;
-          gap: 15px;
         }
 
-        .clinic-card h3 {
-          margin: 0 0 7px;
+        .clinic-main-info h3 {
+          margin: 0 0 8px;
+
           color: #0c2340;
+
+          font-size: 16px;
         }
 
-        .clinic-card p {
-          margin: 0;
+        .quota-info {
+          display: grid;
 
-          color: #94a3b8;
+          grid-template-columns:
+            repeat(3, 1fr);
 
-          font-size: 10px;
-
-          word-break: break-all;
+          gap: 12px;
         }
 
-        .clinic-quota {
-          text-align: right;
+        .quota-info > div {
+          display: flex;
+
+          flex-direction: column;
+
+          gap: 5px;
         }
 
-        .clinic-quota span {
-          display: block;
-
+        .quota-info span {
           color: #94a3b8;
 
           font-size: 11px;
         }
 
-        .clinic-quota strong {
-          display: block;
+        .quota-info strong {
+          color: #334155;
 
-          margin-top: 5px;
-
-          color: #0c2340;
-
-          font-size: 20px;
+          font-size: 16px;
         }
 
-        /* ========================= */
-        /* Booking Grid */
-        /* ========================= */
+        .daily-status {
+          color: #64748b;
+
+          font-size: 11px;
+
+          white-space: nowrap;
+        }
+
+        /* ======================================================
+           BOOKINGS
+        ====================================================== */
 
         .booking-grid {
           display: grid;
@@ -3331,14 +5581,14 @@ const AdminDashboard = () => {
           background: white;
 
           border:
-            1px solid #e2e8f0;
+            1px solid #dbe2ea;
 
           border-radius: 10px;
 
           padding: 20px;
 
           box-shadow:
-            0 3px 10px
+            0 2px 6px
             rgba(15, 23, 42, 0.04);
         }
 
@@ -3351,15 +5601,17 @@ const AdminDashboard = () => {
           align-items:
             flex-start;
 
-          gap: 10px;
+          gap: 15px;
 
           margin-bottom: 18px;
         }
 
         .booking-top h3 {
-          margin: 0 0 5px;
+          margin: 0 0 6px;
 
           color: #0c2340;
+
+          font-size: 16px;
         }
 
         .booking-top p {
@@ -3370,36 +5622,48 @@ const AdminDashboard = () => {
           font-size: 12px;
         }
 
-        .booking-details p {
+        .booking-details {
+          display: flex;
+
+          flex-direction: column;
+        }
+
+        .booking-details > div {
           display: flex;
 
           justify-content:
             space-between;
 
+          gap: 15px;
+
+          padding: 10px 0;
+
           border-bottom:
             1px solid #f1f5f9;
-
-          padding-bottom: 10px;
-
-          margin-bottom: 10px;
         }
 
         .booking-details span {
           color: #94a3b8;
+
+          font-size: 12px;
         }
 
         .booking-details strong {
           color: #334155;
+
+          font-size: 12px;
+
+          text-align: right;
         }
 
-        /* ========================= */
-        /* Status */
-        /* ========================= */
+        /* ======================================================
+           STATUS
+        ====================================================== */
 
         .status-badge {
           padding: 5px 9px;
 
-          border-radius: 20px;
+          border-radius: 5px;
 
           font-size: 11px;
 
@@ -3409,39 +5673,44 @@ const AdminDashboard = () => {
         }
 
         .status-pending {
-          background: #fef3c7;
-          color: #b45309;
-        }
+          background: #f8fafc;
 
-        .status-approved {
-          background: #dcfce7;
-          color: #15803d;
-        }
-
-        .status-rejected {
-          background: #fee2e2;
-          color: #b91c1c;
-        }
-
-        .status-exported {
-          background: #e0e7ff;
-          color: #4338ca;
-        }
-
-        .status-unknown {
-          background: #e2e8f0;
           color: #475569;
         }
 
-        /* ========================= */
-        /* Patient Table */
-        /* ========================= */
+        .status-approved {
+          background: #f8fafc;
+
+          color: #334155;
+        }
+
+        .status-rejected {
+          background: #f8fafc;
+
+          color: #475569;
+        }
+
+        .status-exported {
+          background: #f8fafc;
+
+          color: #334155;
+        }
+
+        .status-unknown {
+          background: #f8fafc;
+
+          color: #64748b;
+        }
+
+        /* ======================================================
+           PATIENT TABLE
+        ====================================================== */
 
         .patient-table-wrapper {
           background: white;
 
           border:
-            1px solid #e2e8f0;
+            1px solid #dbe2ea;
 
           border-radius: 10px;
 
@@ -3462,7 +5731,7 @@ const AdminDashboard = () => {
 
           text-align: left;
 
-          padding: 15px;
+          padding: 14px;
 
           font-size: 12px;
 
@@ -3471,21 +5740,23 @@ const AdminDashboard = () => {
         }
 
         .patient-table td {
-          padding: 15px;
+          padding: 14px;
 
           border-bottom:
             1px solid #f1f5f9;
+
+          color: #334155;
 
           font-size: 13px;
         }
 
         .patient-table tr:hover {
-          background: #f8fafc;
+          background: #fafafa;
         }
 
-        /* ========================= */
-        /* Empty */
-        /* ========================= */
+        /* ======================================================
+           EMPTY / LOADING
+        ====================================================== */
 
         .empty-box,
         .empty-small,
@@ -3493,7 +5764,7 @@ const AdminDashboard = () => {
           background: white;
 
           border:
-            1px solid #e2e8f0;
+            1px solid #dbe2ea;
 
           border-radius: 10px;
 
@@ -3508,29 +5779,36 @@ const AdminDashboard = () => {
           padding: 30px;
         }
 
-        /* ========================= */
-        /* Mobile */
-        /* ========================= */
+        /* ======================================================
+           RESPONSIVE
+        ====================================================== */
 
-        @media (max-width: 900px) {
-
-          .admin-sidebar {
-            width: 180px;
-          }
+        @media (max-width: 1100px) {
 
           .stats-grid {
             grid-template-columns:
               repeat(2, 1fr);
           }
 
-          .clinic-form {
-            flex-direction: column;
-            align-items: stretch;
+          .summary-grid {
+            grid-template-columns:
+              repeat(2, 1fr);
+          }
+
+          .clinic-management-card {
+            grid-template-columns:
+              1fr 1fr;
+
+            align-items: start;
+          }
+
+          .daily-status {
+            white-space: normal;
           }
 
         }
 
-        @media (max-width: 650px) {
+        @media (max-width: 800px) {
 
           .admin-layout {
             flex-direction: column;
@@ -3544,28 +5822,76 @@ const AdminDashboard = () => {
             overflow-x: auto;
 
             padding: 10px;
+
+            border-right: none;
+
+            border-bottom:
+              1px solid #dbe2ea;
           }
 
           .sidebar-btn {
             min-width: 120px;
+
+            margin: 0 5px 0 0;
           }
 
           .admin-main {
             padding: 20px;
           }
 
-          .stats-grid {
-            grid-template-columns: 1fr;
+          .clinic-form {
+            flex-direction: column;
+
+            align-items: stretch;
           }
 
-          .overview-grid {
+          .quota-field {
+            max-width: none;
+          }
+
+        }
+
+        @media (max-width: 600px) {
+
+          .admin-header {
+            padding: 0 15px;
+          }
+
+          .admin-header h2 {
+            font-size: 16px;
+          }
+
+          .admin-header p {
+            font-size: 10px;
+          }
+
+          .logout-btn {
+            padding: 8px 12px;
+          }
+
+          .stats-grid,
+          .summary-grid {
             grid-template-columns: 1fr;
           }
 
           .section-header {
             flex-direction: column;
+
             align-items: flex-start;
-            gap: 15px;
+          }
+
+          .capacity-grid,
+          .booking-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .clinic-management-card {
+            grid-template-columns: 1fr;
+          }
+
+          .quota-info {
+            grid-template-columns:
+              repeat(3, 1fr);
           }
 
         }
@@ -3577,4 +5903,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
