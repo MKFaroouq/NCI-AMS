@@ -2,8 +2,8 @@ const jwt = require('jsonwebtoken');
 const {Booking , Counter } =require('../models/PatientRequest');
 const Clinic  = require('../models/Clinic');
 const { getTodayDateString } = require("../utils/dateUtils");
-const ExcelJS = require('exceljs');
-const path = require('path');
+// const ExcelJS = require('exceljs');
+// const path = require('path');
 
 // function 1 : craete a booking
 
@@ -17,18 +17,30 @@ async function createBooking(req, res) {
         // fetch the required fields from the request body
         const { patientName, nationalId, phoneNumber, clinicId } = req.body;
 
-
         // Validation — data validation for required fields
         if (!patientName || !nationalId || !phoneNumber || !clinicId ) {
             return res.status(400).json({ error: "all fields are required" });
         }
 
-        const cleanphoneNumber = phoneNumber.replace(/\D/g, "");   
+        // clean ant values - only keep digits
         const cleanNationalId = nationalId.replace(/\D/g, "");
+        const cleanPhoneNumber = phoneNumber.replace(/\D/g, "");   
 
+        if(!cleanNationalId || cleanNationalId.length !== 14) {
+            return res.status(400).json({ error: "Invalid national ID" });
+        }
+
+        const isValidPhoneNumber = /^01[0125]\d{8}$/.test(cleanPhoneNumber);
+        if (!isValidPhoneNumber) {
+            return res.status(400).json({ error: "Invalid phone number" });
+        }
+
+
+        // for debugging purposes, log the request body to the console
         console.log(req.body);
-        console.log("Phone:", req.body.phoneNumber);
 
+
+        //===== clinic validation =====//
 
         // make sure the clinic exists and is active
         const clinic = await Clinic.findById(clinicId);
@@ -41,12 +53,13 @@ async function createBooking(req, res) {
             return res.status(400).json({ error: "clinic is not active" });
         }
 
+        //===== booking limit validation =====//
         // Rate Limit - only 3 bookings per week per national ID
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
         const weeklyBookingCount = await Booking.countDocuments({
-            nationalId: nationalId,
+            nationalId: cleanNationalId,
             status:     { $in: ['pending', 'approved'] },
             createdAt:  { $gte: oneWeekAgo }
         });
@@ -57,7 +70,7 @@ async function createBooking(req, res) {
             });
         }
 
-        // 8. Daily Quota — per Clinic
+        // Daily Quota — per Clinic
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
 
@@ -73,17 +86,14 @@ async function createBooking(req, res) {
             });
         }
 
-        console.log(/^01[0125]\d{8}$/.test(req.body.phoneNumber));
-
         // save the new booking to the database
         const newBooking = new Booking({
             patientName,
             nationalId : cleanNationalId,
-            phoneNumber: cleanphoneNumber,
+            phoneNumber: cleanPhoneNumber,
             clinicId,
             status:      'pending',
             queueNumber: null,
-            // bookingDate: null
         });
 
         await newBooking.save();
@@ -94,7 +104,17 @@ async function createBooking(req, res) {
         });
 
     } catch (error) {
-        return res.status(500).json({ error: 'An error occurred while creating the booking' , msg: error.message});
+        // handle duplicate active booking (enforced by DB unique index)
+        if (error.code === 11000) {
+            return res.status(400).json({
+                error: 'You already have an active booking. Please wait for it to be reviewed.'
+            });
+        }
+        // general error handling
+        return res.status(500).json({
+            error: 'An error occurred while creating the booking',
+            msg: error.message
+        });
     }
 }
 
