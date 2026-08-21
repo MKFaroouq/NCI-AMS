@@ -6,7 +6,6 @@ const { getTodayDateString } = require("../utils/dateUtils");
 // const path = require('path');
 
 // function 1 : craete a booking
-
 async function createBooking(req, res) {
     try {
         // if there's no data privide from user at all
@@ -119,30 +118,61 @@ async function createBooking(req, res) {
 }
 
 // function 2 : get all bookings
-
 async function getAllBookings(req, res) {
     try {
-        const bookings = await Booking.find().populate('clinicId', 'name').sort({ createdAt: -1 });
-        
-        // if theres no bookings
-        if (bookings.length === 0) {
-            console.log('No bookings found');
-            return res.status(404).json({ error: 'No bookings found' });
+        // optional filters coming from the URL
+        const { status, clinicId } = req.query;
+
+        // build the filter object
+        const filter = {};
+
+        if (status) {
+            filter.status = status;
         }
 
-        // return all booking 
+        if (clinicId) {
+            filter.clinicId = clinicId;
+        }
+
+        // pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // ask the database to filter, sort, and paginate — not JavaScript
+        const bookings = await Booking.find(filter)
+            .populate('clinicId', 'name')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+            // if no bookings found, return a message instead of an empty list
+            if(bookings.length === 0) {
+                return res.status(200).json({
+                    count: 0,
+                    message: 'No bookings found'
+                });
+            }
+
+        // total count for this filter (frontend needs this for "page 1 of 5")
+        const totalCount = await Booking.countDocuments(filter);
+
+        // empty result is NOT an error — just return an empty list
         return res.status(200).json({
-             count: bookings.length,
-             message: 'Bookings fetched successfully',
-             data:{
+            count: bookings.length ,
+            totalCount,
+            page,
+            message: 'Bookings fetched successfully',
+            data: {
                 bookings: bookings
-             }
-            });
+            }
+        });
 
     } catch (error) {
-        return res.status(500).json({ 
-            error: 'An error occurred while fetching bookings', msg: error.message
-         });
+        return res.status(500).json({
+            error: 'An error occurred while fetching bookings',
+            msg: error.message
+        });
     }
 }
 
